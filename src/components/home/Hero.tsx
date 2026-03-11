@@ -1,12 +1,13 @@
 'use client'
 
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { motion, useScroll, useTransform, useMotionValueEvent } from 'framer-motion'
-import { useState } from 'react'
 import { ChevronDown } from 'lucide-react'
+import Image from 'next/image'
 import { SITE_CONFIG } from '@/lib/constants'
 import { MagneticButton } from '@/components/shared/MagneticButton'
 import { AnimatedText } from '@/components/shared/AnimatedText'
+import { PRODUCT_IMAGES } from '@/lib/placeholderImages'
 
 const ease = [0.76, 0, 0.24, 1] as const
 
@@ -89,12 +90,18 @@ export default function Hero() {
           {/* CTAs */}
           <motion.div variants={item} className="flex flex-wrap gap-4 pt-2">
             <MagneticButton href="/shop">
-              <span className="inline-block px-10 py-4 bg-[--color-nuura-charcoal] text-white font-sans text-xs tracking-widest uppercase transition-colors duration-300">
+              <span
+                className="inline-block min-w-[180px] text-center px-10 py-4 font-sans text-xs tracking-widest uppercase transition-colors duration-300"
+                style={{ background: '#2C2C2C', color: '#FDFCFB' }}
+              >
                 Explore Collection
               </span>
             </MagneticButton>
             <MagneticButton href="/shop?filter=new">
-              <span className="inline-block px-10 py-4 border border-[--color-nuura-charcoal] text-[--color-nuura-charcoal] font-sans text-xs tracking-widest uppercase hover:bg-[--color-nuura-charcoal] hover:text-white transition-colors duration-300">
+              <span
+                className="inline-block min-w-[180px] text-center px-10 py-4 font-sans text-xs tracking-widest uppercase transition-all duration-300 hover:bg-[#2C2C2C] hover:text-[#FDFCFB]"
+                style={{ border: '1px solid #2C2C2C', color: '#2C2C2C', background: 'transparent' }}
+              >
                 New Drops
               </span>
             </MagneticButton>
@@ -124,10 +131,17 @@ export default function Hero() {
           transition={{ duration: 1, ease, delay: 0.5 }}
           className="relative hidden md:block"
         >
-          {/* Product placeholder card */}
-          <div className="relative aspect-[3/4] rounded-sm overflow-hidden brand-gradient shadow-2xl">
+          {/* Hero image card */}
+          <div className="relative aspect-[3/4] rounded-sm overflow-hidden shadow-2xl bg-[--color-nuura-nude]">
+            <Image
+              src={PRODUCT_IMAGES.hero}
+              alt="Nuura — Glow Kit"
+              fill
+              className="object-cover object-center"
+              priority
+            />
             {/* shimmer overlay */}
-            <div className="absolute inset-0 animate-shimmer bg-[linear-gradient(105deg,transparent_40%,rgba(255,255,255,0.25)_50%,transparent_60%)] bg-[length:200%_100%]" />
+            <div className="absolute inset-0 animate-shimmer bg-[linear-gradient(105deg,transparent_40%,rgba(255,255,255,0.15)_50%,transparent_60%)] bg-[length:200%_100%]" />
 
             {/* floating badge */}
             <motion.div

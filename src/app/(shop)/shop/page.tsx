@@ -1,126 +1,34 @@
-'use client'
+﻿import type { Metadata } from 'next'
+import { MOCK_PRODUCTS } from '@/lib/mockData'
+import ShopClient from '@/components/shop/ShopClient'
 
-import { useState } from 'react'
-import FilterBar from '@/components/shop/FilterBar'
-import ProductGrid from '@/components/shop/ProductGrid'
-import { Product } from '@/types'
-import { AnimatedText } from '@/components/shared/AnimatedText'
+export const metadata: Metadata = {
+  title: 'Shop - Nuura',
+  description: 'Browse our curated collection of premium self-care and accessories.',
+}
 
-// Placeholder product data – will be replaced with API data
-const MOCK_PRODUCTS: Product[] = [
-  {
-    _id: '1',
-    slug: 'rose-quartz-roller',
-    name: 'Rose Quartz Roller',
-    tagline: 'Lymphatic drainage meets ritual',
-    description: 'Handcrafted from genuine rose quartz. Cool to the touch, gentle on the skin. Reduces puffiness and promotes circulation with every roll.',
-    price: 2800,
-    comparePrice: 3500,
-    images: [],
-    category: 'self-care',
-    tags: ['skincare', 'roller', 'rose quartz'],
-    inStock: true,
-    stockCount: 24,
-    isFeatured: true,
-    isNewDrop: false,
-    isBestSeller: true,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    _id: '2',
-    slug: 'gua-sha-set',
-    name: 'Gua Sha Set',
-    tagline: 'Ancient beauty, modern ritual',
-    description: 'Premium jade gua sha tool for facial sculpting and tension relief. Includes usage guide.',
-    price: 1950,
-    images: [],
-    category: 'self-care',
-    tags: ['gua sha', 'jade', 'facial'],
-    inStock: true,
-    stockCount: 18,
-    isFeatured: true,
-    isNewDrop: true,
-    isBestSeller: false,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    _id: '3',
-    slug: 'silk-scrunchie-bundle',
-    name: 'Silk Scrunchie Bundle',
-    tagline: 'Zero crease, zero compromise',
-    description: 'Set of 5 mulberry silk scrunchies in warm neutral tones. Gentle on hair, stunning on your wrist.',
-    price: 1200,
-    images: [],
-    category: 'accessories',
-    tags: ['scrunchie', 'silk', 'hair'],
-    inStock: true,
-    stockCount: 50,
-    isFeatured: false,
-    isNewDrop: false,
-    isBestSeller: true,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    _id: '4',
-    slug: 'facial-ice-globes',
-    name: 'Facial Ice Globes',
-    tagline: 'Chill your way to clarity',
-    description: 'Stainless steel ice globes for de-puffing and tightening. Fill with water and freeze.',
-    price: 3200,
-    images: [],
-    category: 'self-care',
-    tags: ['ice globes', 'de-puff'],
-    inStock: true,
-    stockCount: 12,
-    isFeatured: false,
-    isNewDrop: true,
-    isBestSeller: false,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-]
-
-export default function ShopPage() {
-  const [activeCategory, setActiveCategory] = useState<string | null>(null)
-  const [activeFilter, setActiveFilter] = useState<string | null>(null)
-
-  const filtered = MOCK_PRODUCTS.filter((p) => {
-    if (activeCategory && p.category !== activeCategory) return false
-    if (activeFilter === 'new' && !p.isNewDrop) return false
-    if (activeFilter === 'bestseller' && !p.isBestSeller) return false
-    if (activeFilter === 'sale' && !p.comparePrice) return false
-    return true
-  })
+export default async function ShopPage() {
+  let products = MOCK_PRODUCTS
+  try {
+    const base = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
+    const res = await fetch(`${base}/api/products`, { next: { revalidate: 60 } })
+    if (res.ok) {
+      const data = await res.json()
+      if (Array.isArray(data) && data.length > 0) products = data
+    }
+  } catch {}
 
   return (
-    <div className="min-h-screen bg-[#FDFCFB] pt-32 pb-24 px-8">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="mb-12">
-          <p className="font-sans text-xs tracking-[0.3em] uppercase text-[#8A7F7A] mb-4">
-            All Products
-          </p>
-          <AnimatedText
-            text="The Nuura Edit"
-            tag="h1"
-            className="font-display text-5xl text-[#2C2C2C]"
-          />
-        </div>
-
-        {/* Filters */}
-        <FilterBar
-          activeCategory={activeCategory}
-          activeFilter={activeFilter}
-          onCategoryChange={setActiveCategory}
-          onFilterChange={setActiveFilter}
-        />
-
-        {/* Products */}
-        <ProductGrid products={filtered} />
-      </div>
-    </div>
+    <main className="min-h-screen bg-[--color-nuura-warm-white]">
+      <header className="pt-36 pb-16 bg-[--color-nuura-cream] text-center">
+        <p className="font-sans text-[9px] tracking-[0.25em] uppercase text-[--color-nuura-muted] mb-4">The Edit</p>
+        <h1 className="font-display font-light text-[--color-nuura-charcoal] leading-none" style={{ fontSize: 'clamp(3rem, 7vw, 6rem)' }}>
+          All Products
+        </h1>
+        <div className="w-12 h-px bg-[--color-nuura-muted]/40 mx-auto mt-6" />
+        <p className="font-sans text-sm text-[--color-nuura-muted] mt-4">{products.length} pieces</p>
+      </header>
+      <ShopClient initialProducts={products as any} />
+    </main>
   )
 }

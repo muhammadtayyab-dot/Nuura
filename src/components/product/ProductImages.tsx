@@ -1,8 +1,8 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import Image from 'next/image'
 
 interface ProductImagesProps {
   images: string[]
@@ -10,60 +10,51 @@ interface ProductImagesProps {
 }
 
 export default function ProductImages({ images, name }: ProductImagesProps) {
-  const [activeIndex, setActiveIndex] = useState(0)
-
-  const placeholders = images.length > 0
-    ? images
-    : ['placeholder-1', 'placeholder-2', 'placeholder-3']
+  const [selectedIndex, setSelectedIndex] = useState(0)
+  const hasImages = images.length > 0
 
   return (
-    <div className="space-y-4">
-      {/* Main Image */}
-      <div className="relative aspect-square bg-[#F5F0E6] rounded-brand overflow-hidden">
+    <div>
+      <div className="relative aspect-[3/4] rounded-sm overflow-hidden bg-[--color-nuura-nude]">
         <AnimatePresence mode="wait">
           <motion.div
-            key={activeIndex}
+            key={selectedIndex}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="absolute inset-0 brand-gradient"
-          />
+            transition={{ duration: 0.35 }}
+            className="absolute inset-0"
+          >
+            {hasImages ? (
+              <Image
+                src={images[selectedIndex]}
+                alt={name}
+                fill
+                className="object-cover object-center"
+                sizes="(max-width: 768px) 100vw, 55vw"
+                priority={selectedIndex === 0}
+              />
+            ) : (
+              <div className="absolute inset-0 brand-gradient" />
+            )}
+          </motion.div>
         </AnimatePresence>
-
-        {/* Prev/Next */}
-        {placeholders.length > 1 && (
-          <>
-            <button
-              onClick={() => setActiveIndex((i) => (i - 1 + placeholders.length) % placeholders.length)}
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center hover:bg-white transition-colors"
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <button
-              onClick={() => setActiveIndex((i) => (i + 1) % placeholders.length)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center hover:bg-white transition-colors"
-            >
-              <ChevronRight size={16} />
-            </button>
-          </>
-        )}
       </div>
 
-      {/* Thumbnails */}
-      {placeholders.length > 1 && (
-        <div className="flex gap-3 overflow-x-auto hide-scrollbar">
-          {placeholders.map((_, i) => (
+      {hasImages && images.length > 1 && (
+        <div className="flex gap-3 mt-4">
+          {images.map((src, i) => (
             <button
               key={i}
-              onClick={() => setActiveIndex(i)}
-              className={`flex-shrink-0 w-20 aspect-square bg-[#F5F0E6] rounded-brand overflow-hidden transition-all duration-200 ${
-                i === activeIndex
-                  ? 'ring-2 ring-[#2C2C2C]'
-                  : 'ring-1 ring-[#EDE0D4] opacity-60 hover:opacity-100'
-              }`}
+              onClick={() => setSelectedIndex(i)}
+              className={[
+                'relative w-20 h-20 rounded-sm overflow-hidden flex-shrink-0 transition-all duration-200',
+                i === selectedIndex
+                  ? 'ring-1 ring-[--color-nuura-charcoal] ring-offset-2'
+                  : 'opacity-60 hover:opacity-100',
+              ].join(' ')}
             >
-              <div className="w-full h-full brand-gradient" />
+              <Image src={src} alt={name} fill className="object-cover" sizes="80px" />
             </button>
           ))}
         </div>

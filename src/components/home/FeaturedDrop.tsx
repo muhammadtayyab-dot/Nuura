@@ -21,7 +21,9 @@ const MOCK_PRODUCTS = [
     category: 'self-care',
     isNewDrop: true,
     isBestSeller: false,
-    images: [],
+    images: [
+      'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=600&q=80',
+    ],
     slug: 'rose-quartz-gua-sha',
   },
   {
@@ -33,7 +35,9 @@ const MOCK_PRODUCTS = [
     category: 'self-care',
     isNewDrop: false,
     isBestSeller: true,
-    images: [],
+    images: [
+      'https://images.unsplash.com/photo-1522338242992-e1a54906a8da?w=600&q=80',
+    ],
     slug: 'led-glow-mirror',
   },
   {
@@ -45,7 +49,9 @@ const MOCK_PRODUCTS = [
     category: 'accessories',
     isNewDrop: true,
     isBestSeller: false,
-    images: [],
+    images: [
+      'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=600&q=80',
+    ],
     slug: 'mini-chain-crossbody',
   },
 ]

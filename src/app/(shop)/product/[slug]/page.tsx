@@ -1,57 +1,54 @@
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
+import { MOCK_PRODUCTS } from '@/lib/mockData'
 import ProductImages from '@/components/product/ProductImages'
 import ProductInfo from '@/components/product/ProductInfo'
-import AddToCart from '@/components/product/AddToCart'
 import { Product } from '@/types'
 
-// Placeholder — replace with DB fetch
-const MOCK_PRODUCTS: Record<string, Product> = {
-  'rose-quartz-roller': {
-    _id: '1',
-    slug: 'rose-quartz-roller',
-    name: 'Rose Quartz Roller',
-    tagline: 'Lymphatic drainage meets ritual',
-    description:
-      'Handcrafted from genuine rose quartz. Cool to the touch, gentle on the skin. Use daily to reduce puffiness, promote circulation, and elevate your skincare ritual.',
-    price: 2800,
-    comparePrice: 3500,
-    images: [],
-    category: 'self-care',
-    tags: ['skincare', 'roller', 'rose quartz', 'glow'],
-    inStock: true,
-    stockCount: 24,
-    isFeatured: true,
-    isNewDrop: false,
-    isBestSeller: true,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-}
-
-interface ProductPageProps {
+interface PageProps {
   params: Promise<{ slug: string }>
 }
 
-export default async function ProductPage({ params }: ProductPageProps) {
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params
-  const product = MOCK_PRODUCTS[slug]
+  const product = MOCK_PRODUCTS.find((p) => p.slug === slug)
+  if (!product) return { title: 'Product - Nuura' }
+  return {
+    title: `${product.name} - Nuura`,
+    description: product.tagline,
+  }
+}
+
+export default async function ProductPage({ params }: PageProps) {
+  const { slug } = await params
+
+  let product: Product | undefined
+
+  try {
+    const base = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
+    const res = await fetch(`${base}/api/products/${slug}`, { next: { revalidate: 60 } })
+    if (res.ok) {
+      const data = await res.json()
+      if (data && data.slug) product = data as Product
+    }
+  } catch {}
+
+  if (!product) {
+    product = MOCK_PRODUCTS.find((p) => p.slug === slug) as Product | undefined
+  }
 
   if (!product) notFound()
 
   return (
-    <div className="min-h-screen bg-[#FDFCFB] pt-32 pb-24">
-      <div className="max-w-6xl mx-auto px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
-          {/* Images */}
+    <main className="min-h-screen bg-[--color-nuura-warm-white] pt-24 pb-24">
+      <div className="max-w-[1400px] mx-auto px-6 md:px-12 lg:px-20">
+        <div className="grid grid-cols-1 md:grid-cols-[55%_45%] gap-12 md:gap-16 items-start">
           <ProductImages images={product.images} name={product.name} />
-
-          {/* Info + Cart */}
-          <div className="space-y-8">
+          <div className="md:sticky md:top-28">
             <ProductInfo product={product} />
-            <AddToCart product={product} />
           </div>
         </div>
       </div>
-    </div>
+    </main>
   )
 }
