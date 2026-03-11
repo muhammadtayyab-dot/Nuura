@@ -28,3 +28,53 @@ export async function GET(request: Request) {
     return NextResponse.json({ products: filtered.slice(0, limit) })
   }
 }
+
+export async function POST(request: Request) {
+  try {
+    await connectDB()
+    const body = await request.json()
+
+    const { name, tagline, description, price, category, stockCount } = body as {
+      name?: string
+      tagline?: string
+      description?: string
+      price?: number
+      category?: string
+      stockCount?: number
+    }
+
+    if (!name || !tagline || !description || price === undefined || !category) {
+      return NextResponse.json(
+        { error: 'name, tagline, description, price, and category are required' },
+        { status: 400 }
+      )
+    }
+
+    // Generate slug from name
+    const slug = name
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .trim()
+      .replace(/\s+/g, '-')
+
+    const product = await ProductModel.create({
+      ...body,
+      slug,
+      stockCount: stockCount ?? 0,
+      inStock: body.inStock ?? (stockCount ?? 0) > 0,
+    })
+
+    return NextResponse.json({ product }, { status: 201 })
+  } catch (err: unknown) {
+    if (
+      err instanceof Error &&
+      'code' in err &&
+      (err as NodeJS.ErrnoException).code === '11000'
+    ) {
+      return NextResponse.json({ error: 'A product with that name already exists' }, { status: 409 })
+    }
+    console.error('POST product error:', err)
+    return NextResponse.json({ error: 'Failed to create product' }, { status: 500 })
+  }
+}
+
