@@ -29,7 +29,8 @@ export default async function ProductPage({ params }: PageProps) {
     const res = await fetch(`${base}/api/products/${slug}`, { next: { revalidate: 60 } })
     if (res.ok) {
       const data = await res.json()
-      if (data && data.slug) product = data as Product
+      const p = data.product ?? data
+      if (p && p.slug) product = p as Product
     }
   } catch {}
 

@@ -14,7 +14,8 @@ export default async function ShopPage() {
     const res = await fetch(`${base}/api/products`, { next: { revalidate: 60 } })
     if (res.ok) {
       const data = await res.json()
-      if (Array.isArray(data) && data.length > 0) products = data
+      const list = data.products ?? data
+      if (Array.isArray(list) && list.length > 0) products = list
     }
   } catch {}
 
