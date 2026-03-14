@@ -1,20 +1,21 @@
-'use client'
+﻿'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
-import {
-  motion,
-  AnimatePresence,
-  useScroll,
-  useMotionValueEvent,
-} from 'framer-motion'
+import { useEffect, useState } from 'react'
+import { motion, AnimatePresence, useScroll, useMotionValueEvent } from 'framer-motion'
 import { ShoppingBag, Search, X, Menu } from 'lucide-react'
 import { usePathname } from 'next/navigation'
-import { NAV_LINKS, SITE_CONFIG } from '@/lib/constants'
 import { useCartStore } from '@/store/cartStore'
-import { MagneticButton } from '@/components/shared/MagneticButton'
 
-const ease = [0.76, 0, 0.24, 1] as const
+const NAV_LINKS = [
+  { href: '/shop', label: 'Shop' },
+  { href: '/about', label: 'Story' },
+]
+
+const itemVariants = {
+  hidden: { y: -16, opacity: 0 },
+  visible: { y: 0, opacity: 1 },
+}
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false)
@@ -24,103 +25,161 @@ export default function Navbar() {
   const totalItems = useCartStore((s) => s.totalItems())
   const openCart = useCartStore((s) => s.openCart)
 
-  useMotionValueEvent(scrollY, 'change', (v) => setIsScrolled(v > 80))
+  useMotionValueEvent(scrollY, 'change', (v) => setIsScrolled(v > 60))
 
-  /* ── entrance stagger ───────────────────────────────── */
-  const navContainer = {
-    hidden: {},
-    visible: { transition: { staggerChildren: 0.06, delayChildren: 0.1 } },
-  }
-  const navItem = {
-    hidden: { y: -20, opacity: 0 },
-    visible: { y: 0, opacity: 1, transition: { duration: 0.5, ease } },
+  useEffect(() => {
+    document.body.style.overflow = menuOpen ? 'hidden' : ''
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [menuOpen])
+
+  const navItemProps = {
+    variants: itemVariants,
+    transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] as const },
   }
 
   return (
     <>
-      {/* ── Main bar ─────────────────────────────────────── */}
       <motion.header
-        variants={navContainer}
-        initial="hidden"
-        animate="visible"
-        className={[
-          'fixed top-0 left-0 right-0 z-50',
-          'flex items-center justify-between',
-          'h-18 px-8 md:px-12 lg:px-16',
-          'transition-all duration-400',
-          isScrolled
-            ? 'bg-white/80 backdrop-blur-md border-b border-[--color-nuura-nude]/30 shadow-sm'
-            : 'bg-transparent',
-        ].join(' ')}
+        initial='hidden'
+        animate='visible'
+        transition={{ staggerChildren: 0.1, delayChildren: 0.1 }}
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 50,
+          height: '72px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0 clamp(1.5rem, 6vw, 5rem)',
+          backgroundColor: isScrolled ? 'rgba(250,248,244,0.92)' : 'transparent',
+          backdropFilter: isScrolled ? 'blur(12px)' : 'none',
+          borderBottom: isScrolled ? '1px solid #E8E0D8' : '1px solid transparent',
+          transition: 'all 300ms ease',
+        }}
       >
-        {/* Logo */}
-        <motion.div variants={navItem}>
-          <MagneticButton href="/">
+        <motion.div {...navItemProps}>
+          <Link href='/' data-cursor='hover' style={{ textDecoration: 'none' }}>
             <span
-              className="font-accent text-2xl tracking-widest uppercase text-[--color-nuura-charcoal]"
-              data-cursor="hover"
+              style={{
+                fontFamily: 'var(--font-accent)',
+                fontSize: '18px',
+                letterSpacing: '0.45em',
+                color: '#1A1714',
+                textTransform: 'uppercase',
+              }}
             >
-              {SITE_CONFIG.name}
+              NUURA
             </span>
-          </MagneticButton>
+          </Link>
         </motion.div>
 
-        {/* Desktop nav links — centered */}
-        <motion.nav
-          variants={navItem}
-          className="hidden md:flex items-center gap-8"
-        >
+        <motion.nav {...navItemProps} style={{ display: 'none', alignItems: 'center', gap: '2.5rem' }} className='md:flex'>
           {NAV_LINKS.map((link) => {
-            const active = pathname === link.href || pathname.startsWith(link.href + '?')
+            const active = pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href))
             return (
               <Link
                 key={link.href}
                 href={link.href}
-                data-cursor="hover"
-                className="relative group font-sans text-sm tracking-wider uppercase text-[--color-nuura-charcoal] transition-opacity duration-200 hover:opacity-60"
+                data-cursor='hover'
+                style={{
+                  position: 'relative',
+                  paddingBottom: '4px',
+                  textDecoration: 'none',
+                  fontFamily: 'var(--font-sans)',
+                  fontSize: '11px',
+                  letterSpacing: '0.2em',
+                  textTransform: 'uppercase',
+                  color: active ? '#C4614A' : '#8C8078',
+                  transition: 'color 200ms ease',
+                }}
+                onMouseEnter={(e) => {
+                  if (!active) e.currentTarget.style.color = '#1A1714'
+                }}
+                onMouseLeave={(e) => {
+                  if (!active) e.currentTarget.style.color = '#8C8078'
+                }}
               >
                 {link.label}
-                {/* slide-in underline */}
-                <span
-                  className={[
-                    'absolute -bottom-0.5 left-0 h-px bg-[--color-nuura-charcoal]',
-                    'transition-all duration-300',
-                    active ? 'w-full' : 'w-0 group-hover:w-full',
-                  ].join(' ')}
-                />
+                {active && (
+                  <span
+                    style={{
+                      position: 'absolute',
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      height: '1px',
+                      backgroundColor: '#C4614A',
+                    }}
+                  />
+                )}
               </Link>
             )
           })}
         </motion.nav>
 
-        {/* Right actions */}
-        <motion.div variants={navItem} className="flex items-center gap-3">
-          {/* Search */}
+        <motion.div {...navItemProps} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <button
-            className="p-2 text-[--color-nuura-charcoal] hover:opacity-60 transition-opacity"
-            data-cursor="hover"
-            aria-label="Search"
+            style={{ padding: '0.5rem', color: '#1A1714', transition: 'color 200ms ease', background: 'transparent', border: 0 }}
+            data-cursor='hover'
+            aria-label='Search'
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = '#8C8078'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = '#1A1714'
+            }}
           >
-            <Search size={18} strokeWidth={1.5} />
+            <Search size={18} strokeWidth={1} />
           </button>
 
-          {/* Cart */}
           <button
             onClick={openCart}
-            className="relative p-2 text-[--color-nuura-charcoal] hover:opacity-60 transition-opacity"
-            data-cursor="hover"
-            aria-label="Cart"
+            style={{
+              position: 'relative',
+              padding: '0.5rem',
+              color: '#1A1714',
+              transition: 'color 200ms ease',
+              background: 'transparent',
+              border: 0,
+            }}
+            data-cursor='hover'
+            aria-label='Cart'
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = '#8C8078'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = '#1A1714'
+            }}
           >
-            <ShoppingBag size={18} strokeWidth={1.5} />
+            <ShoppingBag size={18} strokeWidth={1} />
             <AnimatePresence>
               {totalItems > 0 && (
                 <motion.span
-                  key="badge"
+                  key='badge'
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   exit={{ scale: 0 }}
                   transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                  className="absolute -top-0.5 -right-0.5 w-[18px] h-[18px] bg-[--color-nuura-charcoal] text-white text-[10px] font-sans flex items-center justify-center rounded-full"
+                  style={{
+                    position: 'absolute',
+                    top: '-2px',
+                    right: '-2px',
+                    width: '18px',
+                    height: '18px',
+                    borderRadius: '9999px',
+                    backgroundColor: '#C4614A',
+                    color: '#FFFFFF',
+                    fontSize: '10px',
+                    fontFamily: 'var(--font-sans)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
                 >
                   {totalItems}
                 </motion.span>
@@ -128,62 +187,85 @@ export default function Navbar() {
             </AnimatePresence>
           </button>
 
-          {/* Hamburger — mobile only */}
           <button
-            className="md:hidden p-2 text-[--color-nuura-charcoal]"
+            className='md:hidden'
             onClick={() => setMenuOpen(true)}
-            aria-label="Open menu"
+            aria-label='Open menu'
+            style={{ padding: '0.5rem', color: '#1A1714', background: 'transparent', border: 0 }}
           >
-            <Menu size={20} strokeWidth={1.5} />
+            <Menu size={20} strokeWidth={1} />
           </button>
         </motion.div>
       </motion.header>
 
-      {/* ── Full-screen mobile menu ───────────────────── */}
       <AnimatePresence>
         {menuOpen && (
           <motion.div
-            initial={{ x: '100%' }}
-            animate={{ x: '0%' }}
-            exit={{ x: '100%' }}
-            transition={{ duration: 0.5, ease }}
-            className="fixed inset-0 z-[60] bg-[--color-nuura-warm-white] flex flex-col px-8 py-8"
+            initial={{ y: '-100%' }}
+            animate={{ y: '0%' }}
+            exit={{ y: '-100%' }}
+            transition={{ duration: 0.6, ease: [0.76, 0, 0.24, 1] as const }}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 60,
+              backgroundColor: '#FAF8F4',
+              display: 'flex',
+              flexDirection: 'column',
+              padding: '2rem clamp(1.5rem, 6vw, 5rem)',
+            }}
           >
-            {/* Close button */}
-            <div className="flex justify-end mb-12">
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '3rem' }}>
               <button
                 onClick={() => setMenuOpen(false)}
-                className="p-2 text-[--color-nuura-charcoal]"
-                aria-label="Close menu"
+                aria-label='Close menu'
+                data-cursor='hover'
+                style={{ padding: '0.5rem', color: '#1A1714', background: 'transparent', border: 0 }}
               >
-                <X size={24} strokeWidth={1.5} />
+                <X size={24} strokeWidth={1} />
               </button>
             </div>
 
-            {/* Links */}
-            <nav className="flex flex-col gap-6 flex-1">
+            <nav style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'center' }}>
               {NAV_LINKS.map((link, i) => (
                 <motion.div
                   key={link.href}
-                  initial={{ x: 40, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  transition={{ delay: i * 0.08, duration: 0.5, ease }}
+                  initial={{ y: -20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.1 + i * 0.1, duration: 0.5, ease: [0.22, 1, 0.36, 1] as const }}
+                  style={{ borderTop: '1px solid #D4796A', padding: '1.5rem 0' }}
                 >
                   <Link
                     href={link.href}
                     onClick={() => setMenuOpen(false)}
-                    className="font-display text-5xl text-[--color-nuura-charcoal] hover:text-[--color-nuura-muted] transition-colors duration-200"
+                    data-cursor='hover'
+                    style={{
+                      display: 'block',
+                      textDecoration: 'none',
+                      fontFamily: 'var(--font-display)',
+                      fontSize: '4rem',
+                      lineHeight: 1,
+                      color: '#1A1714',
+                      transition: 'color 200ms ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = '#C4614A'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = '#1A1714'
+                    }}
                   >
                     {link.label}
                   </Link>
                 </motion.div>
               ))}
+              <motion.div
+                initial={{ y: -20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.1 + NAV_LINKS.length * 0.1, duration: 0.5, ease: [0.22, 1, 0.36, 1] as const }}
+                style={{ borderTop: '1px solid #D4796A' }}
+              />
             </nav>
-
-            {/* Footer text */}
-            <p className="font-sans text-xs tracking-widest uppercase text-[--color-nuura-muted]">
-              {SITE_CONFIG.name} — {SITE_CONFIG.tagline}
-            </p>
           </motion.div>
         )}
       </AnimatePresence>

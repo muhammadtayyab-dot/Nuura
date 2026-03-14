@@ -1,101 +1,35 @@
-'use client'
+﻿'use client'
 
 import { useRef } from 'react'
 import { useGSAP } from '@gsap/react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { ArrowRight } from 'lucide-react'
 import Link from 'next/link'
+import { ArrowRight } from 'lucide-react'
 import ProductCard from '@/components/shop/ProductCard'
-import { AnimatedText } from '@/components/shared/AnimatedText'
+import { MOCK_PRODUCTS } from '@/lib/mockData'
 
 gsap.registerPlugin(ScrollTrigger)
 
-const MOCK_PRODUCTS = [
-  {
-    _id: '1',
-    name: 'Rose Quartz Gua Sha',
-    tagline: 'Sculpt. Depuff. Glow.',
-    price: 2800,
-    comparePrice: 3500,
-    category: 'self-care',
-    isNewDrop: true,
-    isBestSeller: false,
-    images: [
-      'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=600&q=80',
-    ],
-    slug: 'rose-quartz-gua-sha',
-  },
-  {
-    _id: '2',
-    name: 'LED Glow Mirror',
-    tagline: 'Studio lighting, anywhere.',
-    price: 4500,
-    comparePrice: 5500,
-    category: 'self-care',
-    isNewDrop: false,
-    isBestSeller: true,
-    images: [
-      'https://images.unsplash.com/photo-1522338242992-e1a54906a8da?w=600&q=80',
-    ],
-    slug: 'led-glow-mirror',
-  },
-  {
-    _id: '3',
-    name: 'Mini Chain Crossbody',
-    tagline: 'Small bag. Big statement.',
-    price: 3200,
-    comparePrice: null,
-    category: 'accessories',
-    isNewDrop: true,
-    isBestSeller: false,
-    images: [
-      'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=600&q=80',
-    ],
-    slug: 'mini-chain-crossbody',
-  },
-]
-
 export default function FeaturedDrop() {
   const sectionRef = useRef<HTMLElement>(null)
-  const headerRef = useRef<HTMLDivElement>(null)
-  const cardsRef = useRef<HTMLDivElement>(null)
 
   useGSAP(
     () => {
-      if (!sectionRef.current || !headerRef.current || !cardsRef.current) return
-
-      /* header fade-in */
-      gsap.fromTo(
-        headerRef.current,
-        { y: 40, opacity: 0 },
-        {
-          y: 0,
-          opacity: 1,
-          duration: 0.9,
-          ease: 'power3.out',
-          scrollTrigger: {
-            trigger: sectionRef.current,
-            start: 'top 80%',
-            once: true,
-          },
-        }
-      )
-
-      /* cards stagger */
-      const cards = cardsRef.current.querySelectorAll<HTMLElement>('.product-card-item')
+      if (!sectionRef.current) return
+      const cards = sectionRef.current.querySelectorAll('.featured-card')
       gsap.fromTo(
         cards,
-        { y: 60, opacity: 0 },
+        { y: 80, opacity: 0 },
         {
           y: 0,
           opacity: 1,
           duration: 0.9,
           ease: 'power3.out',
-          stagger: 0.15,
+          stagger: 0.16,
           scrollTrigger: {
-            trigger: cardsRef.current,
-            start: 'top 85%',
+            trigger: sectionRef.current,
+            start: 'top 75%',
             once: true,
           },
         }
@@ -104,58 +38,42 @@ export default function FeaturedDrop() {
     { scope: sectionRef }
   )
 
-  return (
-    <section
-      ref={sectionRef}
-      className="py-32 px-8 md:px-16 lg:px-24 bg-[--color-nuura-cream]"
-    >
-      <div className="max-w-7xl mx-auto">
+  const featured = MOCK_PRODUCTS.slice(0, 3)
 
-        {/* Section header */}
-        <div
-          ref={headerRef}
-          className="flex items-end justify-between mb-16"
-          style={{ opacity: 0 }}
-        >
-          <div>
-            <p className="font-sans text-[10px] tracking-[0.4em] uppercase text-[--color-nuura-muted] mb-4">
+  return (
+    <section ref={sectionRef} className='bg-[#0D0B09] py-32 px-8 md:px-16 lg:px-24'>
+      <div className='flex justify-between items-end mb-20 gap-8'>
+        <div>
+          <div className='flex items-center gap-3 mb-6'>
+            <span className='gold-line' />
+            <p className='font-sans text-[10px] tracking-[0.4em] uppercase text-[#C9A84C]'>
               Featured Drop
             </p>
-            <h2
-              className="font-display font-light text-[--color-nuura-charcoal] leading-tight"
-              style={{ fontSize: 'clamp(2.5rem, 5vw, 4.5rem)' }}
-            >
-              <AnimatedText text="This season's" delay={0.1} />
-              <AnimatedText text="obsessions." delay={0.25} />
-            </h2>
           </div>
-
-          <Link
-            href="/shop"
-            className="hidden md:inline-flex items-center gap-2 group font-sans text-sm tracking-widest uppercase text-[--color-nuura-charcoal]"
+          <h2
+            className='font-display font-light text-[#F2EDE4]'
+            style={{ fontSize: 'clamp(2.5rem,5vw,4rem)' }}
           >
-            <span className="relative after:absolute after:bottom-0 after:left-0 after:h-px after:w-0 after:bg-[--color-nuura-charcoal] after:transition-all after:duration-300 group-hover:after:w-full">
-              View All
-            </span>
-            <ArrowRight
-              size={14}
-              strokeWidth={1.5}
-              className="transition-transform duration-300 group-hover:translate-x-1"
-            />
-          </Link>
+            This season&apos;s obsessions.
+          </h2>
         </div>
 
-        {/* Product grid */}
-        <div
-          ref={cardsRef}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+        <Link
+          href='/shop'
+          data-cursor='hover'
+          className='inline-flex items-center gap-2 font-sans text-xs tracking-[0.2em] uppercase text-[#C9A84C] hover:text-[#E8C97A] transition-colors'
         >
-          {MOCK_PRODUCTS.map((product) => (
-            <div key={product._id} className="product-card-item" style={{ opacity: 0 }}>
-              <ProductCard product={product} />
-            </div>
-          ))}
-        </div>
+          View All
+          <ArrowRight size={14} strokeWidth={1.5} />
+        </Link>
+      </div>
+
+      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
+        {featured.map((product) => (
+          <div key={product.slug} className='featured-card'>
+            <ProductCard product={product as any} />
+          </div>
+        ))}
       </div>
     </section>
   )

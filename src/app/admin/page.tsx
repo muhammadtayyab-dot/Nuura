@@ -104,7 +104,7 @@ export default function AdminDashboardPage() {
   })
 
   const pendingOrders =
-    stats?.recentOrders.filter((o) => o.paymentStatus === 'pending_verification') ?? []
+    stats?.recentOrders?.filter((o) => o.paymentStatus === 'pending_verification') ?? []
 
   return (
     <div>
@@ -217,7 +217,7 @@ export default function AdminDashboardPage() {
             <div className="px-6 py-12 text-center font-sans text-sm text-white/30">
               Loading...
             </div>
-          ) : !stats?.recentOrders.length ? (
+          ) : !stats?.recentOrders?.length ? (
             <div className="px-6 py-12 text-center font-sans text-sm text-white/30">
               No orders yet
             </div>
@@ -238,7 +238,7 @@ export default function AdminDashboardPage() {
                 </tr>
               </thead>
               <tbody>
-                {stats.recentOrders.map((order) => (
+                {stats?.recentOrders?.map((order) => (
                   <tr
                     key={order._id}
                     className="border-b border-white/5 last:border-0 hover:bg-white/[0.02] transition-colors"

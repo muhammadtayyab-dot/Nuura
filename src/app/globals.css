@@ -1,237 +1,164 @@
-﻿@import "tailwindcss";
-@import "tw-animate-css";
+@import "tailwindcss";
 
-/*  Nuura Brand Tokens  */
-:root {
-  --nuura-cream: #F5F0E6;
-  --nuura-nude: #EDE0D4;
-  --nuura-blush: #F8D7DA;
-  --nuura-sage: #B2BDB5;
-  --nuura-charcoal: #2C2C2C;
-  --nuura-warm-white: #FDFCFB;
-  --nuura-muted: #8A7F7A;
+@theme {
+  --color-n-black: #0d0b09;
+  --color-n-dark: #141210;
+  --color-n-surface: #1c1916;
+  --color-n-border: #2a2520;
+  --color-n-gold: #c9a84c;
+  --color-n-gold-light: #e8c97a;
+  --color-n-gold-muted: #8b7340;
+  --color-n-cream: #f2ede4;
+  --color-n-cream-muted: #b8b0a4;
+  --color-n-white: #faf8f5;
+  --color-n-blush: #c4847a;
+  --color-n-sage: #7a9e8e;
 
-  /* shadcn defaults */
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --color-nuura-cream: #f5f0e6;
+  --color-nuura-nude: #ede0d4;
+  --color-nuura-blush: #f8d7da;
+  --color-nuura-sage: #b2bdb5;
+  --color-nuura-charcoal: #2c2c2c;
+  --color-nuura-warm-white: #fdfcfb;
+  --color-nuura-muted: #8a7f7a;
+
+  --font-display: var(--font-cormorant), Georgia, serif;
+  --font-sans: var(--font-dm-sans), system-ui, sans-serif;
+  --font-accent: var(--font-italiana), Georgia, serif;
+
+  --spacing-18: 4.5rem;
+  --spacing-22: 5.5rem;
+  --spacing-128: 32rem;
+
+  --animate-marquee: marquee 50s linear infinite;
+  --animate-marquee-slow: marquee 80s linear infinite;
+  --animate-float: float 4s ease-in-out infinite;
+  --animate-grain: grain 8s steps(10) infinite;
+  --animate-shimmer-gold: shimmer-gold 3s ease-in-out infinite;
 }
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+@keyframes marquee {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
 }
 
-@custom-variant dark (&:is(.dark *));
-
-/*  Tailwind v4 Theme  */
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-
-  /*  Nuura brand colours  */
-  --color-nuura-cream: var(--nuura-cream);
-  --color-nuura-nude: var(--nuura-nude);
-  --color-nuura-blush: var(--nuura-blush);
-  --color-nuura-sage: var(--nuura-sage);
-  --color-nuura-charcoal: var(--nuura-charcoal);
-  --color-nuura-warm-white: var(--nuura-warm-white);
-  --color-nuura-muted: var(--nuura-muted);
-
-  /*  Nuura fonts  */
-  --font-display: var(--font-display), Georgia, serif;
-  --font-sans: var(--font-sans), system-ui, sans-serif;
-  --font-accent: var(--font-accent), Georgia, serif;
-
-  /*  Nuura animations  */
-  --animate-shimmer: shimmer 2s infinite linear;
-  --animate-float: float 3s ease-in-out infinite;
-  --animate-pulse-soft: pulse-soft 2s ease-in-out infinite;
-  --animate-marquee: marquee 20s linear infinite;
-
-  @keyframes shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
-  }
-  @keyframes float {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-8px); }
-  }
-  @keyframes pulse-soft {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.6; }
-  }
-  @keyframes marquee {
-    0% { transform: translateX(0%); }
-    100% { transform: translateX(-50%); }
-  }
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-12px) rotate(1deg); }
 }
 
-/*  Base  */
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-    box-sizing: border-box;
-    padding: 0;
-    margin: 0;
-  }
-
-  html {
-    @apply font-sans;
-    scroll-behavior: smooth;
-  }
-
-  body {
-    @apply bg-background text-foreground;
-    background-color: var(--nuura-warm-white);
-    color: var(--nuura-charcoal);
-    font-family: var(--font-sans), system-ui, sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    cursor: none;
-  }
-
-  h1, h2, h3 {
-    font-family: var(--font-display), Georgia, serif;
-    font-weight: 400;
-    letter-spacing: -0.02em;
-  }
-
-  ::selection {
-    background-color: var(--nuura-blush);
-    color: var(--nuura-charcoal);
-  }
-
-  ::-webkit-scrollbar {
-    width: 4px;
-  }
-
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  ::-webkit-scrollbar-thumb {
-    background-color: var(--nuura-nude);
-    border-radius: 2px;
-  }
+@keyframes grain {
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(-2%, -3%); }
+  20% { transform: translate(3%, 2%); }
+  30% { transform: translate(-1%, 4%); }
+  40% { transform: translate(2%, -1%); }
+  50% { transform: translate(-3%, 3%); }
+  60% { transform: translate(1%, -2%); }
+  70% { transform: translate(-2%, 1%); }
+  80% { transform: translate(3%, -3%); }
+  90% { transform: translate(-1%, 2%); }
 }
 
-/*  Utilities  */
-@layer utilities {
-  .brand-gradient {
-    background: linear-gradient(
-      135deg,
-      var(--nuura-cream) 0%,
-      var(--nuura-nude) 50%,
-      var(--nuura-blush) 100%
-    );
-  }
+@keyframes shimmer-gold {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
 
-  .text-gradient {
-    background: linear-gradient(135deg, var(--nuura-charcoal), var(--nuura-muted));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
 
-  .hide-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+  cursor: none !important;
+}
 
-  .hide-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
+html {
+  scroll-behavior: smooth;
+}
 
-  .font-display {
-    font-family: var(--font-display), Georgia, serif;
-  }
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-n-black);
+  color: var(--color-n-cream);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  cursor: none;
+  overflow-x: hidden;
+}
 
-  .font-accent {
-    font-family: var(--font-accent), Georgia, serif;
-  }
+body::before {
+  content: '';
+  position: fixed;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+  opacity: 0.035;
+  pointer-events: none;
+  z-index: 9000;
+  animation: grain 8s steps(10) infinite;
+}
 
-  .rounded-brand {
-    border-radius: 2px;
-  }
+h1, h2, h3 {
+  font-family: var(--font-display);
+  font-weight: 300;
+  letter-spacing: -0.02em;
+}
 
-  .rounded-brand-lg {
-    border-radius: 4px;
-  }
+::selection {
+  background-color: var(--color-n-gold);
+  color: var(--color-n-black);
+}
+
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: var(--color-n-black); }
+::-webkit-scrollbar-thumb {
+  background: var(--color-n-gold-muted);
+  border-radius: 0;
+}
+
+.gold-gradient {
+  background: linear-gradient(
+    135deg,
+    var(--color-n-gold-muted) 0%,
+    var(--color-n-gold) 50%,
+    var(--color-n-gold-light) 100%
+  );
+}
+
+.text-gold-gradient {
+  background: linear-gradient(
+    135deg,
+    var(--color-n-gold) 0%,
+    var(--color-n-gold-light) 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.surface-border {
+  border: 1px solid var(--color-n-border);
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.gold-line {
+  width: 40px;
+  height: 1px;
+  background: var(--color-n-gold);
+  display: block;
 }

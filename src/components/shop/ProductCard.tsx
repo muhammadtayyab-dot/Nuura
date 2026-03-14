@@ -1,144 +1,124 @@
-'use client'
-
-import Link from 'next/link'
+﻿import Link from 'next/link'
 import Image from 'next/image'
-import { useCartStore } from '@/store/cartStore'
 import { Product } from '@/types'
+import { formatPKR } from '@/lib/utils'
+import { useCartStore } from '@/store/cartStore'
 
-interface ProductCardProps {
-  product: {
-    _id: string
-    name: string
-    tagline: string
-    price: number
-    comparePrice?: number | null
-    category: string
-    isNewDrop: boolean
-    isBestSeller: boolean
-    images: string[]
-    slug: string
-  }
-  index?: number
-}
-
-const CATEGORY_GRADIENTS: Record<string, string> = {
-  'self-care': 'linear-gradient(135deg, #F8D7DA, #EDE0D4)',
-  accessories: 'linear-gradient(135deg, #EDE0D4, #F5F0E6)',
-}
-
-export default function ProductCard({ product }: ProductCardProps) {
+export default function ProductCard({ product }: { product: Product }) {
   const addItem = useCartStore((s) => s.addItem)
+  const openCart = useCartStore((s) => s.openCart)
 
-  const discount =
-    product.comparePrice && product.comparePrice > product.price
-      ? Math.round(
-          ((product.comparePrice - product.price) / product.comparePrice) * 100
-        )
-      : null
-
-  const handleQuickAdd = (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    /* build a minimal Product-compatible object for the cart */
-    const cartProduct: Product = {
-      _id: product._id,
-      slug: product.slug,
-      name: product.name,
-      tagline: product.tagline,
-      description: '',
-      price: product.price,
-      comparePrice: product.comparePrice ?? undefined,
-      images: product.images,
-      category: product.category as Product['category'],
-      tags: [],
-      inStock: true,
-      stockCount: 99,
-      isFeatured: false,
-      isNewDrop: product.isNewDrop,
-      isBestSeller: product.isBestSeller,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }
-    addItem(cartProduct)
-  }
+  const hasDiscount = typeof product.comparePrice === 'number' && product.comparePrice > product.price
+  const discount = hasDiscount ? Math.round(((product.comparePrice! - product.price) / product.comparePrice!) * 100) : null
 
   return (
-    <div className="group" data-cursor="hover">
-      <Link href={`/product/${product.slug}`} className="block">
-        {/* ── Image area ──────────────────────────── */}
-        <div className="relative aspect-[3/4] overflow-hidden">
-          {/* Background */}
-          {product.images[0] ? (
-            <Image
-              src={product.images[0]}
-              alt={product.name}
-              fill
-              className="object-cover transition-transform duration-[600ms] ease-out group-hover:scale-[1.06]"
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            />
-          ) : (
-            <div
-              className="absolute inset-0 transition-transform duration-[600ms] ease-out group-hover:scale-[1.06]"
-              style={{
-                background:
-                  CATEGORY_GRADIENTS[product.category] ??
-                  CATEGORY_GRADIENTS['self-care'],
-              }}
-            />
-          )}
+    <Link href={`/product/${product.slug}`} data-cursor='hover' style={{ textDecoration: 'none', display: 'block', backgroundColor: '#FAF8F4' }}>
+      <article className='group' style={{ backgroundColor: '#FAF8F4' }}>
+        <div style={{ position: 'relative', aspectRatio: '3 / 4', overflow: 'hidden', backgroundColor: '#F2EDE4' }}>
+          <Image
+            src={product.images?.[0] || '/placeholder.jpg'}
+            alt={product.name}
+            fill
+            style={{ objectFit: 'cover', transition: 'transform 600ms ease' }}
+            className='group-hover:scale-[1.06]'
+            sizes='(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw'
+          />
 
-          {/* Hover overlay */}
-          <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-
-          {/* Badges */}
-          <div className="absolute top-3 left-3 z-10 flex gap-2">
+          <div style={{ position: 'absolute', top: '0.75rem', left: '0.75rem', zIndex: 10, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             {product.isNewDrop && (
-              <span className="bg-[--color-nuura-charcoal] text-white font-sans text-[9px] tracking-widest uppercase px-3 py-1.5">
+              <span
+                style={{
+                  backgroundColor: '#C4614A',
+                  color: '#FFFFFF',
+                  fontFamily: 'var(--font-sans)',
+                  fontSize: '9px',
+                  letterSpacing: '0.2em',
+                  textTransform: 'uppercase',
+                  padding: '0.375rem 0.75rem',
+                  borderRadius: 0,
+                }}
+              >
                 New Drop
               </span>
             )}
             {product.isBestSeller && (
-              <span className="bg-[--color-nuura-blush] text-[--color-nuura-charcoal] font-sans text-[9px] tracking-widest uppercase px-3 py-1.5">
+              <span
+                style={{
+                  border: '1px solid #C4614A',
+                  color: '#C4614A',
+                  backgroundColor: 'transparent',
+                  fontFamily: 'var(--font-sans)',
+                  fontSize: '9px',
+                  letterSpacing: '0.2em',
+                  textTransform: 'uppercase',
+                  padding: '0.375rem 0.75rem',
+                  borderRadius: 0,
+                }}
+              >
                 Best Seller
               </span>
             )}
           </div>
 
-          {/* Quick Add button */}
           <button
-            onClick={handleQuickAdd}
-            className="absolute bottom-4 left-4 right-4 z-10 bg-white/90 backdrop-blur-sm text-[--color-nuura-charcoal] font-sans text-[10px] tracking-widest uppercase py-3 text-center w-full translate-y-full opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 ease-out"
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              addItem(product)
+              openCart()
+            }}
+            style={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              transform: 'translateY(100%)',
+              opacity: 0,
+              transition: 'all 350ms ease',
+              backgroundColor: 'rgba(250,248,244,0.95)',
+              backdropFilter: 'blur(8px)',
+              borderTop: '1px solid #E8E0D8',
+              borderLeft: 0,
+              borderRight: 0,
+              borderBottom: 0,
+              fontFamily: 'var(--font-sans)',
+              fontSize: '10px',
+              letterSpacing: '0.25em',
+              textTransform: 'uppercase',
+              color: '#1A1714',
+              padding: '0.75rem',
+              textAlign: 'center',
+              width: '100%',
+              borderRadius: 0,
+              zIndex: 15,
+            }}
+            className='group-hover:translate-y-0 group-hover:opacity-100'
           >
             Quick Add
           </button>
         </div>
 
-        {/* ── Info area ───────────────────────────── */}
-        <div className="pt-4 pb-2">
-          <h3 className="font-display text-lg text-[--color-nuura-charcoal] leading-tight">
-            {product.name}
-          </h3>
-          <p className="font-sans text-xs text-[--color-nuura-muted] mt-1">
-            {product.tagline}
-          </p>
-          <div className="mt-3 flex items-center gap-3">
-            <span className="font-sans text-sm text-[--color-nuura-charcoal]">
-              PKR {product.price.toLocaleString()}
-            </span>
-            {product.comparePrice && (
-              <span className="font-sans text-xs text-[--color-nuura-muted] line-through">
-                PKR {product.comparePrice.toLocaleString()}
-              </span>
-            )}
-            {discount && (
-              <span className="font-sans text-[9px] text-[--color-nuura-sage]">
-                -{discount}%
-              </span>
+        <div style={{ paddingTop: '1rem', paddingBottom: '0.5rem' }}>
+          <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', color: '#1A1714', lineHeight: 1.15 }}>{product.name}</h3>
+          {product.tagline && (
+            <p style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', color: '#8C8078', marginTop: '0.25rem' }}>
+              {product.tagline}
+            </p>
+          )}
+
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', marginTop: '0.75rem' }}>
+            <span style={{ fontFamily: 'var(--font-sans)', fontSize: '13px', color: '#C4614A' }}>{formatPKR(product.price)}</span>
+            {hasDiscount && (
+              <>
+                <span style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', color: '#8C8078', textDecoration: 'line-through' }}>
+                  {formatPKR(product.comparePrice!)}
+                </span>
+                <span style={{ fontFamily: 'var(--font-sans)', fontSize: '9px', color: '#8C8078' }}>-{discount}%</span>
+              </>
             )}
           </div>
         </div>
-      </Link>
-    </div>
+      </article>
+    </Link>
   )
 }
-

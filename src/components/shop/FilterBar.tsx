@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 interface FilterBarProps {
   activeCategory: string
@@ -15,36 +15,82 @@ const CATEGORIES = [
 
 export default function FilterBar({ activeCategory, activeSort, onCategoryChange, onSortChange }: FilterBarProps) {
   return (
-    <div className="sticky top-[72px] z-40 bg-[--color-nuura-warm-white]/90 backdrop-blur-sm border-b border-[--color-nuura-nude]/40">
-      <div className="max-w-[1600px] mx-auto px-6 md:px-12 lg:px-20 py-3 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
+    <div
+      style={{
+        position: 'sticky',
+        top: '72px',
+        zIndex: 40,
+        backgroundColor: 'rgba(250,248,244,0.95)',
+        backdropFilter: 'blur(12px)',
+        borderBottom: '1px solid #E8E0D8',
+      }}
+    >
+      <div
+        style={{
+          padding: '1rem clamp(1.5rem, 6vw, 5rem)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '1rem',
+          flexWrap: 'wrap',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
           {CATEGORIES.map((cat) => (
             <button
               key={cat.value}
               onClick={() => onCategoryChange(cat.value)}
-              className={[
-                'font-sans text-[9px] tracking-widest uppercase px-4 py-2 border transition-colors duration-200',
-                activeCategory === cat.value
-                  ? 'bg-[--color-nuura-charcoal] text-white border-[--color-nuura-charcoal]'
-                  : 'text-[--color-nuura-muted] border-[--color-nuura-nude] hover:border-[--color-nuura-charcoal] hover:text-[--color-nuura-charcoal]',
-              ].join(' ')}
+              style={{
+                fontFamily: 'var(--font-sans)',
+                fontSize: '10px',
+                letterSpacing: '0.2em',
+                textTransform: 'uppercase',
+                padding: '0.5rem 1.25rem',
+                borderRadius: 0,
+                cursor: 'pointer',
+                transition: 'all 200ms ease',
+                border: activeCategory === cat.value ? '1px solid #1A1714' : '1px solid #E8E0D8',
+                backgroundColor: activeCategory === cat.value ? '#1A1714' : 'transparent',
+                color: activeCategory === cat.value ? '#FAF8F4' : '#8C8078',
+              }}
+              onMouseEnter={(e) => {
+                if (activeCategory !== cat.value) {
+                  e.currentTarget.style.borderColor = '#1A1714'
+                  e.currentTarget.style.color = '#1A1714'
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (activeCategory !== cat.value) {
+                  e.currentTarget.style.borderColor = '#E8E0D8'
+                  e.currentTarget.style.color = '#8C8078'
+                }
+              }}
             >
               {cat.label}
             </button>
           ))}
         </div>
+
         <select
           value={activeSort}
           onChange={(e) => onSortChange(e.target.value)}
-          className="font-sans text-[9px] tracking-wider uppercase bg-transparent border border-[--color-nuura-nude] text-[--color-nuura-muted] px-3 py-2 focus:outline-none focus:border-[--color-nuura-charcoal] cursor-pointer"
+          style={{
+            backgroundColor: 'transparent',
+            border: '1px solid #E8E0D8',
+            color: '#8C8078',
+            fontFamily: 'var(--font-sans)',
+            fontSize: '11px',
+            padding: '0.5rem 0.75rem',
+            borderRadius: 0,
+            outline: 'none',
+          }}
         >
-          <option value="featured">Featured</option>
-          <option value="price-asc">Price: Low to High</option>
-          <option value="price-desc">Price: High to Low</option>
-          <option value="newest">Newest</option>
+          <option value='featured'>Featured</option>
+          <option value='price-asc'>Price: Low to High</option>
+          <option value='price-desc'>Price: High to Low</option>
+          <option value='newest'>Newest</option>
         </select>
       </div>
     </div>
   )
 }
-

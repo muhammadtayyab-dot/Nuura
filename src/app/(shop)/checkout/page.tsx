@@ -20,48 +20,50 @@ import {
 const CITIES = [...SHIPPING_CITIES, 'Other'] as const
 
 const checkoutSchema = z.object({
-  fullName: z.string().min(2, 'Full name must be at least 2 characters'),
-  email: z.string().email('Enter a valid email address'),
-  phone: z.string().min(10, 'Enter a valid Pakistani phone number'),
-  street: z.string().min(5, 'Enter your full street address'),
-  city: z.string().min(1, 'Select your city'),
-  province: z.string().min(2, 'Enter your province'),
+  fullName: z.string().min(2),
+  email: z.string().email(),
+  phone: z.string().min(10),
+  street: z.string().min(5),
+  city: z.string().min(1),
+  province: z.string().min(2),
   notes: z.string().optional(),
   paymentMethod: z.enum(['cod', 'jazzcash', 'easypaisa', 'nayapay']),
 })
 
 type CheckoutForm = z.infer<typeof checkoutSchema>
 
-const PAYMENT_OPTIONS = [
+type PaymentOption = {
+  id: 'cod' | 'jazzcash' | 'easypaisa' | 'nayapay'
+  title: string
+  subtitle: string
+  icon?: React.ReactNode
+  color?: string
+  letter?: string
+}
+
+const PAYMENT_OPTIONS: PaymentOption[] = [
   {
-    id: 'cod' as const,
+    id: 'cod',
     title: 'Cash on Delivery',
     subtitle: 'Pay when your order arrives',
-    badge: 'Most Popular',
-    icon: <Truck size={22} strokeWidth={1.5} className="text-[--color-nuura-muted]" />,
+    icon: <Truck size={20} strokeWidth={1.5} style={{ color: '#8C8078' }} />,
   },
-  {
-    id: 'jazzcash' as const,
-    title: 'JazzCash',
-    subtitle: 'Instant mobile transfer',
-    color: '#ED1C24',
-    letter: 'J',
-  },
-  {
-    id: 'easypaisa' as const,
-    title: 'EasyPaisa',
-    subtitle: 'Instant mobile transfer',
-    color: '#4CAF50',
-    letter: 'E',
-  },
-  {
-    id: 'nayapay' as const,
-    title: 'NayaPay',
-    subtitle: 'Instant mobile transfer',
-    color: '#7B2D8B',
-    letter: 'N',
-  },
+  { id: 'jazzcash', title: 'JazzCash', subtitle: 'Instant mobile transfer', color: '#ED1C24', letter: 'J' },
+  { id: 'easypaisa', title: 'EasyPaisa', subtitle: 'Instant mobile transfer', color: '#4CAF50', letter: 'E' },
+  { id: 'nayapay', title: 'NayaPay', subtitle: 'Instant mobile transfer', color: '#7B2D8B', letter: 'N' },
 ]
+
+const inputStyle: React.CSSProperties = {
+  width: '100%',
+  backgroundColor: '#FFFFFF',
+  border: '1px solid #E8E0D8',
+  color: '#1A1714',
+  padding: '0.8rem 1rem',
+  fontFamily: 'var(--font-sans)',
+  fontSize: '14px',
+  borderRadius: 0,
+  outline: 'none',
+}
 
 export default function CheckoutPage() {
   const router = useRouter()
@@ -72,7 +74,12 @@ export default function CheckoutPage() {
   const [submitError, setSubmitError] = useState('')
   const [copied, setCopied] = useState(false)
 
-  const { register, handleSubmit, watch, formState: { errors } } = useForm<CheckoutForm>({
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors },
+  } = useForm<CheckoutForm>({
     resolver: zodResolver(checkoutSchema),
     defaultValues: { paymentMethod: 'cod' },
   })
@@ -84,37 +91,45 @@ export default function CheckoutPage() {
     totalPrice >= FREE_SHIPPING_THRESHOLD
       ? 0
       : selectedCity
-      ? SHIPPING_RATES[selectedCity] ?? SHIPPING_RATES['Other']
-      : 0
-
+        ? SHIPPING_RATES[selectedCity as keyof typeof SHIPPING_RATES] ?? SHIPPING_RATES.Other
+        : 0
   const total = totalPrice + shippingFee
 
   useEffect(() => {
-    if (items.length === 0) router.replace('/shop')
+    if (items.length === 0) {
+      router.replace('/shop')
+    }
   }, [items.length, router])
 
   const isManualTransfer = ['jazzcash', 'easypaisa', 'nayapay'].includes(selectedPayment)
-  const selectedAccount = isManualTransfer
-    ? PAYMENT_ACCOUNTS[selectedPayment as keyof typeof PAYMENT_ACCOUNTS]
-    : null
+  const selectedAccount = isManualTransfer ? PAYMENT_ACCOUNTS[selectedPayment as keyof typeof PAYMENT_ACCOUNTS] : null
 
-  const handleCopy = async (text: string) => {
+  async function handleCopy(text: string) {
     await navigator.clipboard.writeText(text)
     setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+    setTimeout(() => setCopied(false), 1800)
   }
 
-  const onSubmit = async (data: CheckoutForm) => {
+  async function onSubmit(data: CheckoutForm) {
     setIsSubmitting(true)
     setSubmitError('')
+
     try {
       const res = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          customer: { name: data.fullName, email: data.email, phone: data.phone },
+          customer: {
+            name: data.fullName,
+            email: data.email,
+            phone: data.phone,
+          },
           items,
-          shippingAddress: { street: data.street, city: data.city, province: data.province },
+          shippingAddress: {
+            street: data.street,
+            city: data.city,
+            province: data.province,
+          },
           paymentMethod: data.paymentMethod,
           notes: data.notes,
           subtotal: totalPrice,
@@ -122,12 +137,14 @@ export default function CheckoutPage() {
           total,
         }),
       })
+
       const result = await res.json()
       if (!res.ok) throw new Error(result.error ?? 'Order failed')
+
       clearCart()
-      router.push(`/order-confirmation?order=${result.orderNumber}&method=${data.paymentMethod}`)
-    } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
+      router.push('/order-confirmation?order=' + result.orderNumber + '&method=' + data.paymentMethod)
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : 'Something went wrong')
       setIsSubmitting(false)
     }
   }
@@ -135,199 +152,151 @@ export default function CheckoutPage() {
   if (items.length === 0) return null
 
   return (
-    <main className="min-h-screen bg-[--color-nuura-warm-white] pt-24 pb-16">
-      <div className="max-w-[1200px] mx-auto px-8 md:px-16 lg:px-24">
-        <h1 className="font-display font-light text-4xl text-[--color-nuura-charcoal] mb-12">
-          Checkout
-        </h1>
+    <main style={{ minHeight: '100vh', backgroundColor: '#FAF8F4', paddingTop: '6rem' }}>
+      <div style={{ padding: '4rem clamp(1.5rem, 6vw, 5rem)' }}>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '3rem', color: '#1A1714', marginBottom: '2rem' }}>Checkout</h1>
 
         <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="grid grid-cols-1 lg:grid-cols-[60%_40%] gap-12 lg:gap-16 items-start">
-
-            {/* ─── LEFT: FORM ─── */}
-            <div className="flex flex-col gap-10">
-
-              {/* Section 1 — Contact */}
+          <div className='grid grid-cols-1 lg:grid-cols-[60%_40%] gap-12 items-start'>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
               <section>
-                <h2 className="font-display text-xl text-[--color-nuura-charcoal] mb-6">Contact Information</h2>
-                <div className="flex flex-col gap-4">
-                  <div>
-                    <input
-                      {...register('fullName')}
-                      placeholder="Full Name"
-                      className="w-full border border-[--color-nuura-nude] bg-transparent px-4 py-3.5 font-sans text-sm text-[--color-nuura-charcoal] placeholder-[--color-nuura-muted] focus:outline-none focus:border-[--color-nuura-charcoal] transition-colors"
-                    />
-                    {errors.fullName && <p className="font-sans text-[11px] text-red-500 mt-1">{errors.fullName.message}</p>}
-                  </div>
-                  <div>
-                    <input
-                      {...register('email')}
-                      type="email"
-                      placeholder="Email Address"
-                      className="w-full border border-[--color-nuura-nude] bg-transparent px-4 py-3.5 font-sans text-sm text-[--color-nuura-charcoal] placeholder-[--color-nuura-muted] focus:outline-none focus:border-[--color-nuura-charcoal] transition-colors"
-                    />
-                    {errors.email && <p className="font-sans text-[11px] text-red-500 mt-1">{errors.email.message}</p>}
-                  </div>
-                  <div>
-                    <input
-                      {...register('phone')}
-                      type="tel"
-                      placeholder="03XX-XXXXXXX"
-                      className="w-full border border-[--color-nuura-nude] bg-transparent px-4 py-3.5 font-sans text-sm text-[--color-nuura-charcoal] placeholder-[--color-nuura-muted] focus:outline-none focus:border-[--color-nuura-charcoal] transition-colors"
-                    />
-                    {errors.phone && <p className="font-sans text-[11px] text-red-500 mt-1">{errors.phone.message}</p>}
-                  </div>
+                <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '22px', color: '#1A1714', marginBottom: '1rem' }}>Contact Information</h2>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <input {...register('fullName')} placeholder='Full Name' style={inputStyle} />
+                  {errors.fullName && <p style={{ fontFamily: 'var(--font-sans)', color: '#C4614A', fontSize: '12px' }}>{errors.fullName.message}</p>}
+
+                  <input {...register('email')} type='email' placeholder='Email Address' style={inputStyle} />
+                  {errors.email && <p style={{ fontFamily: 'var(--font-sans)', color: '#C4614A', fontSize: '12px' }}>{errors.email.message}</p>}
+
+                  <input {...register('phone')} type='tel' placeholder='03XX-XXXXXXX' style={inputStyle} />
+                  {errors.phone && <p style={{ fontFamily: 'var(--font-sans)', color: '#C4614A', fontSize: '12px' }}>{errors.phone.message}</p>}
                 </div>
               </section>
 
-              {/* Section 2 — Address */}
               <section>
-                <h2 className="font-display text-xl text-[--color-nuura-charcoal] mb-6">Delivery Address</h2>
-                <div className="flex flex-col gap-4">
-                  <div>
-                    <textarea
-                      {...register('street')}
-                      rows={2}
-                      placeholder="Street Address, Building, Apartment"
-                      className="w-full border border-[--color-nuura-nude] bg-transparent px-4 py-3.5 font-sans text-sm text-[--color-nuura-charcoal] placeholder-[--color-nuura-muted] focus:outline-none focus:border-[--color-nuura-charcoal] transition-colors resize-none"
-                    />
-                    {errors.street && <p className="font-sans text-[11px] text-red-500 mt-1">{errors.street.message}</p>}
+                <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '22px', color: '#1A1714', marginBottom: '1rem' }}>Delivery Address</h2>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <textarea {...register('street')} rows={2} placeholder='Street Address, Building, Apartment' style={inputStyle} />
+                  {errors.street && <p style={{ fontFamily: 'var(--font-sans)', color: '#C4614A', fontSize: '12px' }}>{errors.street.message}</p>}
+
+                  <div className='grid grid-cols-2 gap-3'>
+                    <select {...register('city')} style={inputStyle}>
+                      <option value=''>Select City</option>
+                      {CITIES.map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                    </select>
+                    <input {...register('province')} placeholder='Province' style={inputStyle} />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <select
-                        {...register('city')}
-                        className="w-full border border-[--color-nuura-nude] bg-[--color-nuura-warm-white] px-4 py-3.5 font-sans text-sm text-[--color-nuura-charcoal] focus:outline-none focus:border-[--color-nuura-charcoal] transition-colors cursor-pointer"
-                      >
-                        <option value="">Select City</option>
-                        {CITIES.map((c) => (
-                          <option key={c} value={c}>{c}</option>
-                        ))}
-                      </select>
-                      {errors.city && <p className="font-sans text-[11px] text-red-500 mt-1">{errors.city.message}</p>}
-                    </div>
-                    <div>
-                      <input
-                        {...register('province')}
-                        placeholder="Province"
-                        className="w-full border border-[--color-nuura-nude] bg-transparent px-4 py-3.5 font-sans text-sm text-[--color-nuura-charcoal] placeholder-[--color-nuura-muted] focus:outline-none focus:border-[--color-nuura-charcoal] transition-colors"
-                      />
-                      {errors.province && <p className="font-sans text-[11px] text-red-500 mt-1">{errors.province.message}</p>}
-                    </div>
-                  </div>
-                  <div>
-                    <textarea
-                      {...register('notes')}
-                      rows={2}
-                      placeholder="Landmark, delivery notes... (optional)"
-                      className="w-full border border-[--color-nuura-nude] bg-transparent px-4 py-3.5 font-sans text-sm text-[--color-nuura-charcoal] placeholder-[--color-nuura-muted] focus:outline-none focus:border-[--color-nuura-charcoal] transition-colors resize-none"
-                    />
-                  </div>
+                  {(errors.city || errors.province) && (
+                    <p style={{ fontFamily: 'var(--font-sans)', color: '#C4614A', fontSize: '12px' }}>
+                      {errors.city?.message || errors.province?.message}
+                    </p>
+                  )}
+
+                  <textarea {...register('notes')} rows={2} placeholder='Landmark, delivery notes... (optional)' style={inputStyle} />
                 </div>
               </section>
 
-              {/* Section 3 — Payment */}
               <section>
-                <h2 className="font-display text-xl text-[--color-nuura-charcoal] mb-6">Payment Method</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '22px', color: '#1A1714', marginBottom: '1rem' }}>Payment Method</h2>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.75rem' }} className='sm:grid-cols-2'>
                   {PAYMENT_OPTIONS.map((opt) => {
                     const isSelected = selectedPayment === opt.id
                     return (
                       <label
                         key={opt.id}
-                        className={[
-                          'flex items-center gap-4 p-4 border cursor-pointer transition-all duration-200',
-                          isSelected
-                            ? 'border-[--color-nuura-charcoal] bg-[--color-nuura-cream]'
-                            : 'border-[--color-nuura-nude] hover:border-[--color-nuura-charcoal]/50',
-                        ].join(' ')}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.75rem',
+                          backgroundColor: isSelected ? '#FAF8F4' : '#FFFFFF',
+                          border: isSelected ? '1px solid #C4614A' : '1px solid #E8E0D8',
+                          boxShadow: isSelected ? 'inset 3px 0 0 #C4614A' : 'none',
+                          padding: '1rem',
+                          borderRadius: 0,
+                          cursor: 'pointer',
+                          transition: 'all 200ms ease',
+                        }}
                       >
-                        <input
-                          {...register('paymentMethod')}
-                          type="radio"
-                          value={opt.id}
-                          className="sr-only"
-                        />
-                        {'icon' in opt && opt.icon ? (
+                        <input {...register('paymentMethod')} type='radio' value={opt.id} style={{ display: 'none' }} />
+                        {opt.icon ? (
                           opt.icon
                         ) : (
                           <div
-                            className="w-9 h-9 rounded-full flex items-center justify-center text-white font-sans text-sm font-medium flex-shrink-0"
-                            style={{ backgroundColor: (opt as { color: string }).color }}
+                            style={{
+                              width: '32px',
+                              height: '32px',
+                              borderRadius: '9999px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              color: '#FFFFFF',
+                              fontFamily: 'var(--font-sans)',
+                              fontSize: '13px',
+                              backgroundColor: opt.color,
+                            }}
                           >
-                            {(opt as { letter: string }).letter}
+                            {opt.letter}
                           </div>
                         )}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="font-sans text-sm text-[--color-nuura-charcoal]">{opt.title}</span>
-                            {'badge' in opt && opt.badge && (
-                              <span className="bg-[--color-nuura-sage] text-white font-sans text-[9px] tracking-wider uppercase px-2 py-0.5">{opt.badge}</span>
-                            )}
-                          </div>
-                          <span className="font-sans text-[11px] text-[--color-nuura-muted]">{opt.subtitle}</span>
+                        <div style={{ flex: 1 }}>
+                          <span style={{ fontFamily: 'var(--font-sans)', fontSize: '14px', color: '#1A1714' }}>{opt.title}</span>
+                          <p style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', color: '#8C8078' }}>{opt.subtitle}</p>
                         </div>
-                        {isSelected && (
-                          <CheckCircle size={16} className="text-[--color-nuura-charcoal] flex-shrink-0" />
-                        )}
+                        {isSelected && <CheckCircle size={16} style={{ color: '#C4614A' }} />}
                       </label>
                     )
                   })}
                 </div>
 
-                {/* Manual Transfer Instructions */}
                 <AnimatePresence>
                   {isManualTransfer && selectedAccount && (
                     <motion.div
-                      key="transfer-box"
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 10 }}
-                      transition={{ duration: 0.25 }}
-                      className="mt-4 bg-[--color-nuura-cream] border border-[--color-nuura-nude] p-6"
+                      style={{
+                        marginTop: '1rem',
+                        backgroundColor: '#F2EDE4',
+                        borderLeft: '3px solid #C4614A',
+                        padding: '1.5rem',
+                        fontFamily: 'var(--font-sans)',
+                      }}
                     >
-                      <h3 className="font-display text-lg text-[--color-nuura-charcoal] mb-4">Send Payment To</h3>
-
-                      <div className="mb-4">
-                        <p className="font-sans text-[10px] tracking-wider uppercase text-[--color-nuura-muted] mb-1">{selectedAccount.name} Account</p>
-                        <p className="font-sans text-xs text-[--color-nuura-muted] mb-2">{selectedAccount.accountName}</p>
-                        <button
-                          type="button"
-                          onClick={() => handleCopy(selectedAccount.number)}
-                          className="flex items-center gap-2 group"
-                        >
-                          <span className="font-display text-2xl tracking-wider text-[--color-nuura-charcoal]">{selectedAccount.number}</span>
-                          <Copy size={14} className="text-[--color-nuura-muted] group-hover:text-[--color-nuura-charcoal] transition-colors" />
-                        </button>
-                        <p className="font-sans text-[10px] text-[--color-nuura-muted] mt-1">
-                          {copied ? '✓ Copied!' : 'Tap to copy'}
-                        </p>
-                      </div>
-
-                      <div className="mb-5">
-                        <p className="font-sans text-[10px] tracking-wider uppercase text-[--color-nuura-muted] mb-1">Send exactly:</p>
-                        <p className="font-display text-3xl text-[--color-nuura-charcoal]">PKR {total.toLocaleString()}</p>
-                      </div>
-
-                      <ol className="flex flex-col gap-2 mb-5">
-                        {[
-                          `Open ${selectedAccount.name} app`,
-                          `Send PKR ${total.toLocaleString()} to the number above`,
-                          'Take a screenshot of the confirmation',
-                          'WhatsApp the screenshot to us after placing order',
-                        ].map((step, i) => (
-                          <li key={i} className="flex items-start gap-3">
-                            <span className="font-sans text-[10px] text-[--color-nuura-muted] mt-0.5 w-4 flex-shrink-0">{i + 1}.</span>
-                            <span className="font-sans text-xs text-[--color-nuura-charcoal]">{step}</span>
-                          </li>
-                        ))}
-                      </ol>
-
+                      <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '20px', color: '#1A1714', marginBottom: '0.75rem' }}>Manual Transfer</h3>
+                      <p style={{ fontSize: '12px', color: '#8C8078', marginBottom: '0.35rem' }}>{selectedAccount.name} Account</p>
+                      <button
+                        type='button'
+                        onClick={() => handleCopy(selectedAccount.number)}
+                        style={{ background: 'transparent', border: 0, padding: 0, display: 'flex', alignItems: 'center', gap: '0.45rem', color: '#1A1714' }}
+                      >
+                        <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', letterSpacing: '0.04em' }}>{selectedAccount.number}</span>
+                        <Copy size={14} style={{ color: '#8C8078' }} />
+                      </button>
+                      <p style={{ fontSize: '11px', color: '#8C8078', marginTop: '0.25rem' }}>{copied ? 'Copied!' : 'Tap to copy'}</p>
+                      <p style={{ marginTop: '0.75rem', fontSize: '14px', color: '#C4614A' }}>Send exactly: PKR {total.toLocaleString()}</p>
                       <a
-                        href={`https://wa.me/${WHATSAPP_NUMBER}?text=Hi!%20I%20just%20placed%20an%20order%20and%20am%20sending%20my%20payment%20screenshot.`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 bg-[#25D366] text-white font-sans text-xs tracking-wider uppercase px-5 py-3"
+                        href={'https://wa.me/' + WHATSAPP_NUMBER}
+                        target='_blank'
+                        rel='noopener noreferrer'
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.45rem',
+                          marginTop: '1rem',
+                          backgroundColor: '#1A1714',
+                          color: '#FAF8F4',
+                          textDecoration: 'none',
+                          fontFamily: 'var(--font-sans)',
+                          fontSize: '11px',
+                          letterSpacing: '0.2em',
+                          textTransform: 'uppercase',
+                          padding: '0.75rem 1rem',
+                          borderRadius: 0,
+                        }}
                       >
                         <MessageCircle size={14} strokeWidth={1.5} />
                         WhatsApp Us
@@ -337,87 +306,88 @@ export default function CheckoutPage() {
                 </AnimatePresence>
               </section>
 
-              {/* Submit */}
-              <div>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full bg-[--color-nuura-charcoal] text-white font-sans text-xs tracking-widest uppercase py-5 hover:bg-[--color-nuura-muted] transition-colors duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  {isSubmitting ? 'Placing Order...' : 'Place Order'}
-                </button>
-                {submitError && (
-                  <p className="font-sans text-xs text-red-500 mt-3 text-center">{submitError}</p>
-                )}
-              </div>
+              <button
+                type='submit'
+                disabled={isSubmitting}
+                style={{
+                  width: '100%',
+                  padding: '1.25rem',
+                  backgroundColor: '#1A1714',
+                  color: '#FAF8F4',
+                  border: 0,
+                  borderRadius: 0,
+                  fontFamily: 'var(--font-sans)',
+                  fontSize: '11px',
+                  letterSpacing: '0.25em',
+                  textTransform: 'uppercase',
+                  transition: 'background-color 250ms ease',
+                  opacity: isSubmitting ? 0.7 : 1,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#C4614A'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#1A1714'
+                }}
+              >
+                {isSubmitting ? 'Placing Order...' : 'Place Order'}
+              </button>
+
+              {submitError && <p style={{ fontFamily: 'var(--font-sans)', color: '#C4614A', fontSize: '12px', textAlign: 'center' }}>{submitError}</p>}
             </div>
 
-            {/* ─── RIGHT: ORDER SUMMARY ─── */}
-            <div className="lg:sticky lg:top-24">
-              <div className="bg-[--color-nuura-cream] border border-[--color-nuura-nude]/40 p-8">
-                <h2 className="font-display text-xl text-[--color-nuura-charcoal] mb-6">Order Summary</h2>
+            <aside style={{ position: 'sticky', top: '6rem' }}>
+              <div style={{ backgroundColor: '#F2EDE4', border: '1px solid #E8E0D8', padding: '2rem' }}>
+                <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '22px', color: '#1A1714', marginBottom: '1rem' }}>Order Summary</h2>
 
-                {/* Items */}
-                <div className="flex flex-col divide-y divide-[--color-nuura-nude]/30">
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
                   {items.map((item) => (
-                    <div key={item.product._id} className="flex items-center gap-4 py-3">
-                      <div className="w-[60px] h-[60px] flex-shrink-0 relative rounded-sm overflow-hidden bg-[--color-nuura-nude]">
-                        {item.product.images?.[0] && (
-                          <Image
-                            src={item.product.images[0]}
-                            alt={item.product.name}
-                            fill
-                            className="object-cover"
-                          />
-                        )}
+                    <div key={item.product._id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 0', borderBottom: '1px solid #E8E0D8' }}>
+                      <div style={{ width: '60px', height: '60px', position: 'relative', overflow: 'hidden', backgroundColor: '#FFFFFF', flexShrink: 0 }}>
+                        {item.product.images?.[0] && <Image src={item.product.images[0]} alt={item.product.name} fill style={{ objectFit: 'cover' }} sizes='60px' />}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-display text-base text-[--color-nuura-charcoal] leading-tight">{item.product.name}</p>
-                        <p className="font-sans text-xs text-[--color-nuura-muted] mt-0.5">x{item.quantity}</p>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ fontFamily: 'var(--font-display)', fontSize: '15px', color: '#1A1714' }}>{item.product.name}</p>
+                        <p style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', color: '#8C8078' }}>x{item.quantity}</p>
                       </div>
-                      <span className="font-sans text-sm text-[--color-nuura-charcoal] ml-auto flex-shrink-0">
+                      <p style={{ fontFamily: 'var(--font-sans)', fontSize: '13px', color: '#C4614A' }}>
                         PKR {(item.product.price * item.quantity).toLocaleString()}
-                      </span>
+                      </p>
                     </div>
                   ))}
                 </div>
 
-                {/* Pricing breakdown */}
-                <div className="mt-4 flex flex-col gap-2">
-                  <div className="flex justify-between">
-                    <span className="font-sans text-xs text-[--color-nuura-muted]">Subtotal</span>
-                    <span className="font-sans text-sm text-[--color-nuura-charcoal]">PKR {totalPrice.toLocaleString()}</span>
+                <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-sans)', fontSize: '12px', color: '#8C8078' }}>
+                    <span>Subtotal</span>
+                    <span style={{ color: '#C4614A' }}>PKR {totalPrice.toLocaleString()}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="font-sans text-xs text-[--color-nuura-muted]">Shipping</span>
-                    <span className="font-sans text-sm text-[--color-nuura-charcoal]">
-                      {!selectedCity
-                        ? '—'
-                        : shippingFee === 0
-                        ? 'Free'
-                        : `PKR ${shippingFee.toLocaleString()}`}
-                    </span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-sans)', fontSize: '12px', color: '#8C8078' }}>
+                    <span>Shipping</span>
+                    <span style={{ color: '#C4614A' }}>{shippingFee === 0 ? 'Free' : 'PKR ' + shippingFee.toLocaleString()}</span>
+                  </div>
+                  <div style={{ borderTop: '1px solid #E8E0D8', paddingTop: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                    <span style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', color: '#8C8078', letterSpacing: '0.2em', textTransform: 'uppercase' }}>Total</span>
+                    <span style={{ fontFamily: 'var(--font-display)', fontSize: '24px', color: '#1A1714' }}>PKR {total.toLocaleString()}</span>
                   </div>
                 </div>
-
-                <div className="border-t border-[--color-nuura-nude]/40 my-4" />
-
-                <div className="flex justify-between items-baseline">
-                  <span className="font-display text-xl text-[--color-nuura-charcoal]">Total</span>
-                  <span className="font-display text-xl text-[--color-nuura-charcoal]">PKR {total.toLocaleString()}</span>
-                </div>
-
-                {selectedPayment === 'cod' && (
-                  <p className="font-sans text-[10px] text-[--color-nuura-muted] mt-2">
-                    You&apos;ll pay this amount on delivery
-                  </p>
-                )}
               </div>
-            </div>
-
+            </aside>
           </div>
         </form>
       </div>
+
+      <style jsx>{`
+        input::placeholder,
+        textarea::placeholder {
+          color: #8c8078;
+        }
+        input:focus,
+        textarea:focus,
+        select:focus {
+          border-color: #c4614a !important;
+        }
+      `}</style>
     </main>
   )
 }

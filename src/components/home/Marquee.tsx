@@ -1,30 +1,45 @@
 'use client'
 
 interface MarqueeProps {
+  variant?: 'dark' | 'gold'
   reverse?: boolean
 }
 
-const ITEMS =
-  'Self-Care ✦ Glow Up ✦ Curated Drops ✦ Aesthetic Accessories ✦ New Arrivals ✦ Limited Edition ✦ Nuura ✦ '
+const ITEMS = 'Self-Care  ✦  Glow Up  ✦  Curated Drops  ✦  Aesthetic  ✦  New Arrivals  ✦  Limited Edition  ✦  Nuura  ✦  نور  ✦  '
 
-export default function Marquee({ reverse = false }: MarqueeProps) {
-  /* Duplicate text so the loop appears seamless */
+export default function Marquee({ variant = 'dark', reverse = false }: MarqueeProps) {
   const text = ITEMS.repeat(8)
+  const animationClass = variant === 'gold' ? 'animate-marquee' : 'animate-marquee-slow'
 
   return (
-    <div className="w-full overflow-hidden bg-[--color-nuura-charcoal] py-4">
+    <div
+      className={[
+        'w-full overflow-hidden',
+        variant === 'gold'
+          ? 'bg-[#C9A84C] py-4'
+          : 'bg-[#0D0B09] border-y border-[#2A2520] py-5',
+      ].join(' ')}
+    >
       <div
         className={[
           'flex whitespace-nowrap w-max',
-          reverse ? 'animate-[marquee_20s_linear_infinite_reverse]' : 'animate-marquee',
+          animationClass,
+          reverse ? '[animation-direction:reverse]' : '',
         ].join(' ')}
       >
-        {/* Two identical halves — first exits left while second slides in */}
-        <span className="font-sans text-[11px] tracking-[0.25em] uppercase text-[--color-nuura-cream]/80 pr-0">
+        <span
+          className={[
+            'font-sans text-xs tracking-[0.3em] uppercase pr-0',
+            variant === 'gold' ? 'text-[#0D0B09]' : 'text-[#B8B0A4]/40',
+          ].join(' ')}
+        >
           {text}
         </span>
         <span
-          className="font-sans text-[11px] tracking-[0.25em] uppercase text-[--color-nuura-cream]/80"
+          className={[
+            'font-sans text-xs tracking-[0.3em] uppercase',
+            variant === 'gold' ? 'text-[#0D0B09]' : 'text-[#B8B0A4]/40',
+          ].join(' ')}
           aria-hidden="true"
         >
           {text}

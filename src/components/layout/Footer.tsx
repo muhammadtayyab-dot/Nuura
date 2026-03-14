@@ -1,173 +1,127 @@
-'use client'
-
-import { useState } from 'react'
-import Link from 'next/link'
-import { Instagram, Twitter, Youtube, ArrowRight } from 'lucide-react'
-import { SITE_CONFIG } from '@/lib/constants'
-import { AnimatedSection } from '@/components/shared/AnimatedSection'
-
-const SHOP_LINKS = [
-  { label: 'All Products', href: '/shop' },
-  { label: 'Self-Care', href: '/shop?category=self-care' },
-  { label: 'Accessories', href: '/shop?category=accessories' },
-  { label: 'New Drops', href: '/shop?filter=new' },
-  { label: 'Gift Sets', href: '/shop?filter=gifts' },
-]
-
-const HELP_LINKS = [
-  { label: 'About Us', href: '/about' },
-  { label: 'FAQs', href: '/faqs' },
-  { label: 'Shipping Policy', href: '/shipping' },
-  { label: 'Returns', href: '/returns' },
-  { label: 'Contact', href: '/contact' },
-]
-
-const SOCIALS = [
-  { label: 'Instagram', href: 'https://instagram.com/nuura.pk', icon: Instagram },
-  { label: 'Twitter / X', href: 'https://twitter.com/nuurapk', icon: Twitter },
-  { label: 'YouTube', href: 'https://youtube.com/@nuurapk', icon: Youtube },
-]
+﻿import Link from 'next/link'
 
 export default function Footer() {
-  const [email, setEmail] = useState('')
-  const [subscribed, setSubscribed] = useState(false)
-  const year = new Date().getFullYear()
-
-  const handleSubscribe = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (email.trim()) {
-      setSubscribed(true)
-      setEmail('')
-    }
-  }
-
   return (
-    <footer className="bg-[--color-nuura-charcoal] text-[--color-nuura-cream]">
-      <div className="max-w-7xl mx-auto px-8 md:px-12 lg:px-16 pt-20 pb-12">
+    <footer style={{ backgroundColor: '#1A1714', color: '#FAF8F4' }}>
+      <div
+        style={{
+          padding: '80px 1.5rem',
+          borderBottom: '1px solid rgba(250,248,244,0.08)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <h2
+          style={{
+            fontFamily: 'var(--font-accent)',
+            fontSize: '64px',
+            letterSpacing: '0.4em',
+            color: '#FAF8F4',
+            textTransform: 'uppercase',
+            marginBottom: '0.75rem',
+            textAlign: 'center',
+          }}
+        >
+          NUURA
+        </h2>
+        <p
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontStyle: 'italic',
+            fontSize: '20px',
+            color: '#8C8078',
+            marginBottom: '1.75rem',
+            textAlign: 'center',
+          }}
+        >
+          Crafted for grace, rooted in ritual.
+        </p>
+        <div style={{ width: '60px', height: '1px', backgroundColor: '#C4614A' }} />
+      </div>
 
-        {/* 4-column grid */}
-        <AnimatedSection>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 pb-16 border-b border-white/10">
-
-            {/* Col 1 — Brand */}
-            <div className="flex flex-col gap-5">
-              <span className="font-accent text-3xl tracking-widest uppercase text-[--color-nuura-cream]">
-                {SITE_CONFIG.name}
-              </span>
-              <p className="font-sans text-sm leading-relaxed text-[--color-nuura-cream]/60 max-w-xs">
-                {SITE_CONFIG.description}
-              </p>
-              {/* Social Icons */}
-              <div className="flex gap-4 mt-2">
-                {SOCIALS.map(({ label, href, icon: Icon }) => (
-                  <a
-                    key={label}
-                    href={href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={label}
-                    className="p-2 border border-white/15 hover:border-white/50 hover:text-white transition-colors duration-200 text-[--color-nuura-cream]/60"
-                  >
-                    <Icon size={14} strokeWidth={1.5} />
-                  </a>
-                ))}
-              </div>
-            </div>
-
-            {/* Col 2 — Shop */}
-            <div>
-              <p className="font-sans text-[10px] tracking-[0.3em] uppercase text-[--color-nuura-cream]/40 mb-5">
-                Shop
-              </p>
-              <ul className="flex flex-col gap-3">
-                {SHOP_LINKS.map(({ label, href }) => (
-                  <li key={href}>
-                    <Link
-                      href={href}
-                      className="font-sans text-sm text-[--color-nuura-cream]/70 hover:text-[--color-nuura-cream] transition-colors duration-200"
-                    >
-                      {label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Col 3 — Help */}
-            <div>
-              <p className="font-sans text-[10px] tracking-[0.3em] uppercase text-[--color-nuura-cream]/40 mb-5">
-                Help
-              </p>
-              <ul className="flex flex-col gap-3">
-                {HELP_LINKS.map(({ label, href }) => (
-                  <li key={href}>
-                    <Link
-                      href={href}
-                      className="font-sans text-sm text-[--color-nuura-cream]/70 hover:text-[--color-nuura-cream] transition-colors duration-200"
-                    >
-                      {label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Col 4 — Newsletter */}
-            <div>
-              <p className="font-sans text-[10px] tracking-[0.3em] uppercase text-[--color-nuura-cream]/40 mb-5">
-                Stay in the glow
-              </p>
-              <p className="font-sans text-sm text-[--color-nuura-cream]/60 leading-relaxed mb-5">
-                New drops, rituals, and exclusive offers — straight to your inbox.
-              </p>
-              {subscribed ? (
-                <p className="font-sans text-sm text-[--color-nuura-sage]">
-                  ✓ You&apos;re on the list!
-                </p>
-              ) : (
-                <form onSubmit={handleSubscribe} className="flex">
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="your@email.com"
-                    required
-                    className="flex-1 min-w-0 bg-white/5 border border-white/15 focus:border-white/40 outline-none px-4 py-3 font-sans text-sm text-[--color-nuura-cream] placeholder:text-[--color-nuura-cream]/30 transition-colors duration-200"
-                  />
-                  <button
-                    type="submit"
-                    className="px-4 py-3 bg-[--color-nuura-cream] text-[--color-nuura-charcoal] hover:bg-white transition-colors duration-200 flex items-center"
-                    aria-label="Subscribe"
-                  >
-                    <ArrowRight size={16} strokeWidth={1.5} />
-                  </button>
-                </form>
-              )}
-            </div>
-          </div>
-        </AnimatedSection>
-
-        {/* Bottom bar */}
-        <div className="pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="font-sans text-xs text-[--color-nuura-cream]/40">
-            © {year} {SITE_CONFIG.name}. All rights reserved.
-          </p>
-          <p className="font-sans text-xs text-[--color-nuura-cream]/40">
-            Made with intention in Pakistan 🇵🇰
-          </p>
-          <div className="flex gap-6">
-            {[['Privacy', '/privacy'], ['Terms', '/terms']].map(([label, href]) => (
-              <Link
-                key={href}
-                href={href}
-                className="font-sans text-xs text-[--color-nuura-cream]/40 hover:text-[--color-nuura-cream]/80 transition-colors duration-200"
-              >
-                {label}
-              </Link>
-            ))}
+      <div
+        className='grid grid-cols-1 md:grid-cols-4 gap-12'
+        style={{
+          padding: '60px clamp(1.5rem, 6vw, 5rem)',
+        }}
+      >
+        <div>
+          <h3 style={{ fontFamily: 'var(--font-sans)', fontSize: '9px', letterSpacing: '0.4em', textTransform: 'uppercase', color: '#8C8078', marginBottom: '1.5rem' }}>Explore</h3>
+          <ul style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <li><Link href='/shop' className='footer-link' style={{ fontFamily: 'var(--font-sans)', fontSize: '13px', color: 'rgba(250,248,244,0.5)', textDecoration: 'none' }}>Shop All</Link></li>
+            <li><Link href='/about' className='footer-link' style={{ fontFamily: 'var(--font-sans)', fontSize: '13px', color: 'rgba(250,248,244,0.5)', textDecoration: 'none' }}>Our Story</Link></li>
+          </ul>
+        </div>
+        <div>
+          <h3 style={{ fontFamily: 'var(--font-sans)', fontSize: '9px', letterSpacing: '0.4em', textTransform: 'uppercase', color: '#8C8078', marginBottom: '1.5rem' }}>Assistance</h3>
+          <ul style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <li><Link href='/faq' className='footer-link' style={{ fontFamily: 'var(--font-sans)', fontSize: '13px', color: 'rgba(250,248,244,0.5)', textDecoration: 'none' }}>FAQ</Link></li>
+            <li><Link href='/contact' className='footer-link' style={{ fontFamily: 'var(--font-sans)', fontSize: '13px', color: 'rgba(250,248,244,0.5)', textDecoration: 'none' }}>Contact</Link></li>
+          </ul>
+        </div>
+        <div>
+          <h3 style={{ fontFamily: 'var(--font-sans)', fontSize: '9px', letterSpacing: '0.4em', textTransform: 'uppercase', color: '#8C8078', marginBottom: '1.5rem' }}>Social</h3>
+          <ul style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <li><a href='https://instagram.com' target='_blank' rel='noopener noreferrer' className='social-link' style={{ fontFamily: 'var(--font-sans)', fontSize: '13px', color: '#8C8078', textDecoration: 'none' }}>Instagram</a></li>
+            <li><a href='https://tiktok.com' target='_blank' rel='noopener noreferrer' className='social-link' style={{ fontFamily: 'var(--font-sans)', fontSize: '13px', color: '#8C8078', textDecoration: 'none' }}>TikTok</a></li>
+          </ul>
+        </div>
+        <div>
+          <h3 style={{ fontFamily: 'var(--font-sans)', fontSize: '9px', letterSpacing: '0.4em', textTransform: 'uppercase', color: '#8C8078', marginBottom: '1.5rem' }}>Newsletter</h3>
+          <div style={{ display: 'flex' }}>
+            <input
+              type='email'
+              placeholder='YOUR EMAIL'
+              style={{
+                width: '100%',
+                backgroundColor: 'transparent',
+                border: 0,
+                borderBottom: '1px solid rgba(250,248,244,0.15)',
+                color: '#FAF8F4',
+                paddingBottom: '0.6rem',
+                fontFamily: 'var(--font-sans)',
+                fontSize: '13px',
+                outline: 'none',
+              }}
+            />
           </div>
         </div>
       </div>
+
+      <div
+        style={{
+          borderTop: '1px solid rgba(250,248,244,0.08)',
+          padding: '1.5rem clamp(1.5rem, 6vw, 5rem)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '1rem',
+          flexWrap: 'wrap',
+          fontFamily: 'var(--font-sans)',
+          fontSize: '11px',
+          color: 'rgba(250,248,244,0.25)',
+        }}
+      >
+        <span>© 2025 Nuura</span>
+        <span>Crafted with intention in Pakistan 🇵🇰</span>
+      </div>
+
+      <style jsx>{`
+        .footer-link:hover {
+          color: #faf8f4 !important;
+        }
+        .social-link:hover {
+          color: #c4614a !important;
+        }
+        input::placeholder {
+          color: rgba(250, 248, 244, 0.3);
+        }
+        input:focus {
+          border-bottom-color: #c4614a !important;
+        }
+      `}</style>
     </footer>
   )
 }

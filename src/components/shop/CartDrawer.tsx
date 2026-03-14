@@ -1,12 +1,12 @@
-'use client'
+﻿'use client'
 
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, ShoppingBag, Trash2, Plus, Minus } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { useCartStore } from '@/store/cartStore'
-import { MagneticButton } from '@/components/shared/MagneticButton'
 
-const ease = [0.76, 0, 0.24, 1] as const
+const ease: [number, number, number, number] = [0.76, 0, 0.24, 1]
 
 export default function CartDrawer() {
   const isOpen = useCartStore((s) => s.isOpen)
@@ -21,114 +21,114 @@ export default function CartDrawer() {
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
           <motion.div
-            key="backdrop"
+            key='backdrop'
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="fixed inset-0 z-[70] bg-black/40 backdrop-blur-sm"
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 70,
+              backgroundColor: 'rgba(26,23,20,0.5)',
+              backdropFilter: 'blur(4px)',
+            }}
             onClick={closeCart}
           />
 
-          {/* Drawer */}
-          <motion.div
-            key="drawer"
+          <motion.aside
+            key='drawer'
             initial={{ x: '100%' }}
             animate={{ x: '0%' }}
             exit={{ x: '100%' }}
             transition={{ duration: 0.5, ease }}
-            className="fixed top-0 right-0 bottom-0 z-[80] w-full max-w-[420px] bg-[--color-nuura-warm-white] flex flex-col shadow-2xl"
+            style={{
+              position: 'fixed',
+              top: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 80,
+              width: '100%',
+              maxWidth: '420px',
+              backgroundColor: '#FAF8F4',
+              borderLeft: '1px solid #E8E0D8',
+              display: 'flex',
+              flexDirection: 'column',
+            }}
           >
-            {/* Header */}
-            <div className="flex items-center justify-between px-8 py-6 border-b border-[--color-nuura-nude]/40">
-              <h2 className="font-display text-2xl text-[--color-nuura-charcoal]">
-                Your Cart
-              </h2>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.5rem 2rem', borderBottom: '1px solid #E8E0D8' }}>
+              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '28px', color: '#1A1714' }}>Your Cart</h2>
               <button
                 onClick={closeCart}
-                className="p-2 text-[--color-nuura-charcoal] hover:opacity-60 transition-opacity"
-                aria-label="Close cart"
+                aria-label='Close'
+                style={{ padding: '0.5rem', color: '#8C8078', background: 'transparent', border: 0, transition: 'color 200ms ease' }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = '#1A1714'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = '#8C8078'
+                }}
               >
                 <X size={20} strokeWidth={1.5} />
               </button>
             </div>
 
-            {/* Items */}
-            <div className="flex-1 overflow-y-auto px-8 py-6">
+            <div style={{ padding: '0.5rem 2rem', flex: 1, overflowY: 'auto' }}>
               {items.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-center gap-4">
-                  <ShoppingBag
-                    size={40}
-                    strokeWidth={1}
-                    className="text-[--color-nuura-nude]"
-                  />
-                  <h3 className="font-display text-xl text-[--color-nuura-charcoal]">
-                    Your cart is empty
-                  </h3>
-                  <p className="font-sans text-sm text-[--color-nuura-muted]">
-                    Add something beautiful.
-                  </p>
-                  <div className="mt-2">
-                    <MagneticButton href="/shop" onClick={closeCart}>
-                      <span className="inline-block px-8 py-3 bg-[--color-nuura-charcoal] text-white font-sans text-xs tracking-widest uppercase">
-                        Shop Now
-                      </span>
-                    </MagneticButton>
-                  </div>
+                <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', gap: '0.75rem' }}>
+                  <ShoppingBag size={48} strokeWidth={1.1} style={{ color: '#E8E0D8' }} />
+                  <p style={{ fontFamily: 'var(--font-display)', fontSize: '22px', color: '#1A1714' }}>Your cart is empty</p>
+                  <p style={{ fontFamily: 'var(--font-sans)', fontSize: '13px', color: '#8C8078' }}>Add something beautiful.</p>
                 </div>
               ) : (
-                <div className="flex flex-col divide-y divide-[--color-nuura-nude]/20">
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
                   {items.map((item) => (
-                    <div
-                      key={item.product._id}
-                      className="flex gap-4 py-5"
-                    >
-                      {/* Image placeholder */}
-                      <div className="w-20 h-20 flex-shrink-0 rounded-sm bg-[--color-nuura-nude]" />
-
-                      {/* Info */}
-                      <div className="flex-1 min-w-0">
-                        <p className="font-display text-base text-[--color-nuura-charcoal] leading-tight">
-                          {item.product.name}
-                        </p>
-                        <p className="font-sans text-xs text-[--color-nuura-muted] mt-0.5">
-                          {item.product.tagline}
-                        </p>
-                        <p className="font-sans text-sm text-[--color-nuura-charcoal] mt-1">
-                          PKR {item.product.price.toLocaleString()}
-                        </p>
+                    <div key={item.product._id} style={{ display: 'flex', gap: '1rem', padding: '1.25rem 0', borderBottom: '1px solid #E8E0D8' }}>
+                      <div style={{ width: '80px', height: '80px', position: 'relative', backgroundColor: '#F2EDE4', flexShrink: 0, overflow: 'hidden' }}>
+                        {item.product.images?.[0] && <Image src={item.product.images[0]} alt={item.product.name} fill style={{ objectFit: 'cover' }} sizes='80px' />}
                       </div>
-
-                      {/* Quantity controls */}
-                      <div className="flex flex-col items-end gap-3 flex-shrink-0">
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ fontFamily: 'var(--font-display)', fontSize: '16px', color: '#1A1714', lineHeight: 1.2 }}>{item.product.name}</p>
+                        <p style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: '#8C8078', marginTop: '0.25rem' }}>{item.product.tagline}</p>
+                        <p style={{ fontFamily: 'var(--font-sans)', fontSize: '13px', color: '#C4614A', marginTop: '0.35rem' }}>PKR {item.product.price.toLocaleString()}</p>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.7rem' }}>
                         <button
                           onClick={() => removeItem(item.product._id)}
-                          className="text-[--color-nuura-muted] hover:text-[--color-nuura-charcoal] transition-colors"
-                          aria-label="Remove item"
+                          style={{ color: '#8C8078', background: 'transparent', border: 0, transition: 'color 200ms ease' }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.color = '#C4614A'
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.color = '#8C8078'
+                          }}
+                          aria-label='Remove item'
                         >
                           <Trash2 size={14} strokeWidth={1.5} />
                         </button>
-                        <div className="flex items-center gap-2">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                           <button
-                            onClick={() =>
-                              updateQuantity(item.product._id, item.quantity - 1)
-                            }
-                            className="p-1 text-[--color-nuura-muted] hover:text-[--color-nuura-charcoal] transition-colors"
-                            aria-label="Decrease quantity"
+                            onClick={() => updateQuantity(item.product._id, item.quantity - 1)}
+                            style={{ padding: '0.25rem', color: '#8C8078', background: 'transparent', border: 0 }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.color = '#1A1714'
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.color = '#8C8078'
+                            }}
                           >
                             <Minus size={12} strokeWidth={1.5} />
                           </button>
-                          <span className="font-sans text-sm text-[--color-nuura-charcoal] w-5 text-center">
-                            {item.quantity}
-                          </span>
+                          <span style={{ fontFamily: 'var(--font-sans)', fontSize: '13px', color: '#8C8078', width: '20px', textAlign: 'center' }}>{item.quantity}</span>
                           <button
-                            onClick={() =>
-                              updateQuantity(item.product._id, item.quantity + 1)
-                            }
-                            className="p-1 text-[--color-nuura-muted] hover:text-[--color-nuura-charcoal] transition-colors"
-                            aria-label="Increase quantity"
+                            onClick={() => updateQuantity(item.product._id, item.quantity + 1)}
+                            style={{ padding: '0.25rem', color: '#8C8078', background: 'transparent', border: 0 }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.color = '#1A1714'
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.color = '#8C8078'
+                            }}
                           >
                             <Plus size={12} strokeWidth={1.5} />
                           </button>
@@ -140,44 +140,69 @@ export default function CartDrawer() {
               )}
             </div>
 
-            {/* Footer */}
             {items.length > 0 && (
-              <div className="px-8 py-6 border-t border-[--color-nuura-nude]/40">
-                {/* Subtotal */}
-                <div className="flex items-baseline justify-between">
-                  <span className="font-sans text-xs tracking-wider uppercase text-[--color-nuura-muted]">
-                    Subtotal
-                  </span>
-                  <span className="font-display text-xl text-[--color-nuura-charcoal]">
-                    PKR {totalPrice.toLocaleString()}
-                  </span>
+              <div style={{ padding: '1.5rem 2rem', borderTop: '1px solid #E8E0D8', backgroundColor: '#F2EDE4' }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+                  <span style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: '#8C8078', letterSpacing: '0.2em', textTransform: 'uppercase' }}>Subtotal</span>
+                  <span style={{ fontFamily: 'var(--font-display)', fontSize: '24px', color: '#1A1714' }}>PKR {totalPrice.toLocaleString()}</span>
                 </div>
+                <p style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: '#8C8078', marginTop: '0.45rem' }}>Shipping calculated at checkout.</p>
 
-                {/* Shipping note */}
-                <p className="font-sans text-[10px] text-[--color-nuura-muted] mt-2">
-                  Free shipping on orders over PKR 5,000
-                </p>
-
-                {/* Checkout */}
                 <button
-                  onClick={() => { closeCart(); router.push('/checkout') }}
-                  className="mt-6 w-full bg-[--color-nuura-charcoal] text-white font-sans text-xs tracking-widest uppercase py-4 hover:bg-[--color-nuura-muted] transition-colors duration-200"
+                  onClick={() => {
+                    closeCart()
+                    router.push('/checkout')
+                  }}
+                  style={{
+                    marginTop: '1rem',
+                    width: '100%',
+                    padding: '1rem',
+                    backgroundColor: '#1A1714',
+                    color: '#FAF8F4',
+                    border: 0,
+                    borderRadius: 0,
+                    fontFamily: 'var(--font-sans)',
+                    fontSize: '11px',
+                    letterSpacing: '0.25em',
+                    textTransform: 'uppercase',
+                    transition: 'background-color 250ms ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#C4614A'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = '#1A1714'
+                  }}
                 >
-                  Proceed to Checkout
+                  Checkout
                 </button>
 
-                {/* Continue shopping */}
-                <div className="mt-3 text-center">
-                  <button
-                    onClick={closeCart}
-                    className="font-sans text-xs text-[--color-nuura-muted] underline underline-offset-2 cursor-pointer hover:text-[--color-nuura-charcoal] transition-colors duration-200"
-                  >
-                    Continue Shopping
-                  </button>
-                </div>
+                <button
+                  onClick={closeCart}
+                  style={{
+                    width: '100%',
+                    marginTop: '0.9rem',
+                    background: 'transparent',
+                    border: 0,
+                    fontFamily: 'var(--font-sans)',
+                    fontSize: '11px',
+                    color: '#8C8078',
+                    textDecoration: 'underline',
+                    textAlign: 'center',
+                    cursor: 'pointer',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = '#1A1714'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = '#8C8078'
+                  }}
+                >
+                  Continue shopping
+                </button>
               </div>
             )}
-          </motion.div>
+          </motion.aside>
         </>
       )}
     </AnimatePresence>
