@@ -2,49 +2,56 @@
 
 import { useEffect, useState } from 'react'
 import { motion, useSpring, useMotionValue } from 'framer-motion'
-import { useMousePosition } from '@/hooks/useMousePosition'
 
 export function CustomCursor() {
   const [mounted, setMounted] = useState(false)
   const [isTouch, setIsTouch] = useState(false)
-  const [cursorVariant, setCursorVariant] = useState<'default' | 'hover' | 'hidden'>('default')
+  const [variant, setVariant] = useState<'default' | 'hover' | 'text' | 'hidden'>('default')
+  const [label, setLabel] = useState('')
 
-  const { x, y } = useMousePosition()
+  const mouseX = useMotionValue(0)
+  const mouseY = useMotionValue(0)
 
-  const dotX = useSpring(0, { stiffness: 600, damping: 35 })
-  const dotY = useSpring(0, { stiffness: 600, damping: 35 })
-  const ringX = useSpring(0, { stiffness: 120, damping: 18 })
-  const ringY = useSpring(0, { stiffness: 120, damping: 18 })
+  const dotX = useSpring(mouseX, { stiffness: 600, damping: 35 })
+  const dotY = useSpring(mouseY, { stiffness: 600, damping: 35 })
+  const ringX = useSpring(mouseX, { stiffness: 100, damping: 20 })
+  const ringY = useSpring(mouseY, { stiffness: 100, damping: 20 })
 
   useEffect(() => {
     setMounted(true)
     setIsTouch('ontouchstart' in window || navigator.maxTouchPoints > 0)
-  }, [])
 
-  useEffect(() => {
-    dotX.set(x)
-    dotY.set(y)
-    ringX.set(x)
-    ringY.set(y)
-  }, [x, y, dotX, dotY, ringX, ringY])
-
-  useEffect(() => {
-    const handleMouseOver = (e: MouseEvent) => {
-      const target = e.target as HTMLElement
-      if (target.closest('[data-cursor="hover"]')) {
-        setCursorVariant('hover')
-      } else if (target.closest('[data-cursor="hidden"]')) {
-        setCursorVariant('hidden')
-      } else {
-        setCursorVariant('default')
-      }
+    const move = (e: MouseEvent) => {
+      mouseX.set(e.clientX)
+      mouseY.set(e.clientY)
     }
-    window.addEventListener('mouseover', handleMouseOver)
-    return () => window.removeEventListener('mouseover', handleMouseOver)
-  }, [])
 
-  // Don't render anything until mounted on client
+    const over = (e: MouseEvent) => {
+      const t = e.target as HTMLElement
+      const hoverEl = t.closest('[data-cursor]') as HTMLElement | null
+      if (!hoverEl) {
+        setVariant('default')
+        setLabel('')
+        return
+      }
+      const type = hoverEl.dataset.cursor ?? 'hover'
+      const lbl = hoverEl.dataset.cursorLabel ?? ''
+      setVariant(type as 'default' | 'hover' | 'text' | 'hidden')
+      setLabel(lbl)
+    }
+
+    window.addEventListener('mousemove', move)
+    window.addEventListener('mouseover', over)
+    return () => {
+      window.removeEventListener('mousemove', move)
+      window.removeEventListener('mouseover', over)
+    }
+  }, [mouseX, mouseY])
+
   if (!mounted || isTouch) return null
+
+  const ringSize = variant === 'hover' ? 56 : variant === 'text' ? 80 : variant === 'hidden' ? 0 : 34
+  const ringOpacity = variant === 'hidden' ? 0 : 1
 
   return (
     <>
@@ -52,23 +59,17 @@ export function CustomCursor() {
       <motion.div
         style={{
           position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '5px',
-          height: '5px',
-          borderRadius: '9999px',
-          backgroundColor: '#1A1714',
+          top: 0, left: 0,
+          width: 5, height: 5,
+          borderRadius: '50%',
+          background: '#1A1714',
           pointerEvents: 'none',
-          zIndex: 9999,
-          x: dotX,
-          y: dotY,
+          zIndex: 99998,
+          x: dotX, y: dotY,
           translateX: '-50%',
           translateY: '-50%',
         }}
-        animate={{
-          opacity: cursorVariant === 'hidden' ? 0 : 1,
-          scale: cursorVariant === 'hidden' ? 0 : 1,
-        }}
+        animate={{ opacity: variant === 'hidden' ? 0 : 1, scale: variant === 'hover' ? 0 : 1 }}
         transition={{ duration: 0.15 }}
       />
 
@@ -76,25 +77,41 @@ export function CustomCursor() {
       <motion.div
         style={{
           position: 'fixed',
-          top: 0,
-          left: 0,
-          borderRadius: '9999px',
-          border: '1px solid #C4614A',
+          top: 0, left: 0,
+          borderRadius: '50%',
+          border: '1.5px solid #C4614A',
           pointerEvents: 'none',
-          zIndex: 9998,
-          x: ringX,
-          y: ringY,
+          zIndex: 99997,
+          x: ringX, y: ringY,
           translateX: '-50%',
           translateY: '-50%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
         }}
         animate={{
-          width: cursorVariant === 'hover' ? 52 : cursorVariant === 'hidden' ? 0 : 32,
-          height: cursorVariant === 'hover' ? 52 : cursorVariant === 'hidden' ? 0 : 32,
-          opacity: cursorVariant === 'hidden' ? 0 : 1,
-          backgroundColor: cursorVariant === 'hover' ? 'rgba(196,97,74,0.08)' : 'transparent',
+          width: ringSize,
+          height: ringSize,
+          opacity: ringOpacity,
+          backgroundColor: variant === 'hover'
+            ? 'rgba(196,97,74,0.1)'
+            : 'transparent',
         }}
-        transition={{ duration: 0.2, ease: 'easeOut' }}
-      />
+        transition={{ duration: 0.25, ease: 'easeOut' }}
+      >
+        {label && (
+          <span style={{
+            fontFamily: 'var(--font-sans)',
+            fontSize: '9px',
+            letterSpacing: '0.2em',
+            textTransform: 'uppercase',
+            color: '#C4614A',
+            whiteSpace: 'nowrap',
+          }}>
+            {label}
+          </span>
+        )}
+      </motion.div>
     </>
   )
 }
