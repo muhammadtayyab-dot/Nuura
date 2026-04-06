@@ -29,30 +29,26 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     router.push('/admin/login')
   }
 
-  // Login page renders without sidebar
   if (pathname === '/admin/login') {
     return <>{children}</>
   }
 
   return (
-    <div className="flex h-screen bg-[#0F0F0F] overflow-hidden">
-      {/* Sidebar */}
-      <aside className="w-60 flex-shrink-0 bg-[#141414] border-r border-white/5 flex flex-col">
-        {/* Logo */}
+    <div className="flex h-screen bg-[#F5F0E6] overflow-hidden">
+      <aside className="w-60 flex-shrink-0 bg-[#1B2E1F] border-r border-[#DDD8CF]/30 flex flex-col">
         <div className="px-6 pt-8 pb-0">
           <p
             style={{ fontFamily: 'var(--font-italiana)', letterSpacing: '0.2em' }}
-            className="text-xl text-white"
+            className="text-xl text-[#F5F0E6]"
           >
             Nuura
           </p>
-          <p className="font-sans text-[10px] text-white/30 tracking-widest uppercase mt-1">
+          <p className="font-sans text-[10px] text-[#F5F0E6]/50 tracking-widest uppercase mt-1">
             Admin
           </p>
-          <div className="border-b border-white/5 mt-4 mb-6" />
+          <div className="border-b border-[#F5F0E6]/10 mt-4 mb-6" />
         </div>
 
-        {/* Nav */}
         <nav className="flex flex-col gap-1 px-3 flex-1">
           {NAV_LINKS.map(({ icon: Icon, label, href }) => {
             const isActive =
@@ -64,8 +60,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 className={[
                   'flex items-center gap-3 px-4 py-3 rounded-sm font-sans text-sm transition-all duration-150',
                   isActive
-                    ? 'bg-white/10 text-white'
-                    : 'text-white/60 hover:bg-white/5 hover:text-white',
+                    ? 'bg-[rgba(212,168,83,0.15)] text-[#D4A853]'
+                    : 'text-[#F5F0E6]/70 hover:bg-[#F5F0E6]/10 hover:text-[#F5F0E6]',
                 ].join(' ')}
               >
                 <Icon size={16} strokeWidth={1.5} />
@@ -75,20 +71,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           })}
         </nav>
 
-        {/* Bottom */}
-        <div className="px-6 py-6 flex flex-col gap-3 border-t border-white/5">
+        <div className="px-6 py-6 flex flex-col gap-3 border-t border-[#F5F0E6]/10">
           <a
             href="/"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 font-sans text-xs text-white/30 hover:text-white/60 transition-colors"
+            className="flex items-center gap-2 font-sans text-xs text-[#F5F0E6]/50 hover:text-[#F5F0E6] transition-colors"
           >
             <ExternalLink size={12} strokeWidth={1.5} />
             View Store
           </a>
           <button
             onClick={handleLogout}
-            className="flex items-center gap-2 font-sans text-xs text-white/30 hover:text-white/60 transition-colors text-left"
+            className="flex items-center gap-2 font-sans text-xs text-[#F5F0E6]/50 hover:text-[#F5F0E6] transition-colors text-left"
           >
             <LogOut size={12} strokeWidth={1.5} />
             Logout
@@ -96,8 +91,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-y-auto bg-[#0F0F0F]">{children}</main>
+      <main className="flex-1 overflow-y-auto bg-[#FAFAF8]">{children}</main>
     </div>
   )
 }

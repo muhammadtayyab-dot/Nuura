@@ -1,5 +1,3 @@
-// Shared mock product data — used by API routes when DB is unavailable
-
 export const MOCK_PRODUCTS = [
   {
     _id: '1',
@@ -11,8 +9,8 @@ export const MOCK_PRODUCTS = [
     price: 2800,
     comparePrice: 3500,
     images: [
-      'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=600&q=80',
-      'https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?w=600&q=80',
+      'https://images.unsplash.com/photo-1599305445671-ac291c95aaa9?w=800&q=85',
+      'https://images.unsplash.com/photo-1599305445671-ac291c95aaa9?w=800&q=85',
     ],
     category: 'self-care',
     tags: ['gua-sha', 'rose-quartz', 'facial', 'sculpt'],
@@ -34,8 +32,8 @@ export const MOCK_PRODUCTS = [
     price: 4500,
     comparePrice: 5500,
     images: [
-      'https://images.unsplash.com/photo-1522338242992-e1a54906a8da?w=600&q=80',
-      'https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=600&q=80',
+      'https://images.unsplash.com/photo-1522338242992-e1a54906a8da?w=800&q=85',
+      'https://images.unsplash.com/photo-1522338242992-e1a54906a8da?w=800&q=85',
     ],
     category: 'self-care',
     tags: ['mirror', 'led', 'makeup', 'vanity'],
@@ -57,8 +55,8 @@ export const MOCK_PRODUCTS = [
     price: 3200,
     comparePrice: null,
     images: [
-      'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=600&q=80',
-      'https://images.unsplash.com/photo-1591561954557-26941169b49e?w=600&q=80',
+      'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=800&q=85',
+      'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=800&q=85',
     ],
     category: 'accessories',
     tags: ['bag', 'crossbody', 'chain', 'quilted'],
@@ -80,8 +78,8 @@ export const MOCK_PRODUCTS = [
     price: 1800,
     comparePrice: 2200,
     images: [
-      'https://images.unsplash.com/photo-1556228720-da8ead62f0f0?w=600&q=80',
-      'https://images.unsplash.com/photo-1619451427882-6aeaded4a2b7?w=600&q=80',
+      'https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=800&q=85',
+      'https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=800&q=85',
     ],
     category: 'self-care',
     tags: ['jade', 'roller', 'facial', 'massage'],
@@ -103,8 +101,8 @@ export const MOCK_PRODUCTS = [
     price: 2500,
     comparePrice: null,
     images: [
-      'https://images.unsplash.com/photo-1566150905458-1bf1fc113f0d?w=600&q=80',
-      'https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=600&q=80',
+      'https://images.unsplash.com/photo-1566150905458-1bf1fc113f0d?w=800&q=85',
+      'https://images.unsplash.com/photo-1566150905458-1bf1fc113f0d?w=800&q=85',
     ],
     category: 'accessories',
     tags: ['clutch', 'acrylic', 'transparent', 'evening'],
@@ -122,12 +120,12 @@ export const MOCK_PRODUCTS = [
     name: 'USB Facial Steamer',
     tagline: 'Open up. Breathe in. Glow.',
     description:
-      'Nano ionic facial steamer for deep pore cleansing and intense hydration. Use before your skincare routine to maximise absorption. Portable USB-powered design.',
+      'Nano ionic facial steamer for deep pore cleansing and intense hydration. Use before your skincare routine to maximize absorption. Portable USB-powered design.',
     price: 3800,
     comparePrice: 4500,
     images: [
-      'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=600&q=80',
-      'https://images.unsplash.com/photo-1614806687007-2215420d2e0e?w=600&q=80',
+      'https://images.unsplash.com/photo-1576426863848-c21f53c60b19?w=800&q=85',
+      'https://images.unsplash.com/photo-1576426863848-c21f53c60b19?w=800&q=85',
     ],
     category: 'self-care',
     tags: ['steamer', 'facial', 'pores', 'hydration'],

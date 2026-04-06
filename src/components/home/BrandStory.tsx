@@ -1,89 +1,140 @@
-﻿'use client'
+'use client'
 
-import { useRef } from 'react'
-import { useGSAP } from '@gsap/react'
-import gsap from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { useRef, useState, useEffect } from 'react'
+import { motion, useScroll, useTransform } from 'framer-motion'
 import Link from 'next/link'
-import { AnimatedText } from '@/components/shared/AnimatedText'
 
-gsap.registerPlugin(ScrollTrigger)
+const C = {
+  bg: '#FAF8F4', bgAlt: '#F2EDE4', ink: '#1A1714',
+  rose: '#C4614A', roseLight: '#F0C4BB', muted: '#8C8078', border: '#E8E0D8',
+}
+
+function useInView(threshold = 0.15) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [inView, setInView] = useState(false)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const obs = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) setInView(true) },
+      { threshold }
+    )
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [threshold])
+  return { ref, inView }
+}
 
 export default function BrandStory() {
+  const { ref, inView } = useInView(0.2)
   const sectionRef = useRef<HTMLElement>(null)
-  const backCardRef = useRef<HTMLDivElement>(null)
-
-  useGSAP(
-    () => {
-      if (!sectionRef.current || !backCardRef.current) return
-      gsap.fromTo(
-        backCardRef.current,
-        { rotation: -6 },
-        {
-          rotation: -2,
-          ease: 'none',
-          scrollTrigger: {
-            trigger: sectionRef.current,
-            start: 'top 80%',
-            end: 'center center',
-            scrub: 1.5,
-          },
-        }
-      )
-    },
-    { scope: sectionRef }
-  )
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ['start end', 'end start'],
+  })
+  const arabicY = useTransform(scrollYProgress, [0, 1], ['20px', '-40px'])
+  const bgScale = useTransform(scrollYProgress, [0, 1], [1, 1.05])
 
   return (
-    <section ref={sectionRef} className='bg-[#141210] py-32 px-8 md:px-16 lg:px-24'>
-      <div className='grid grid-cols-1 md:grid-cols-[40%_60%] gap-16 items-center'>
-        <div className='relative aspect-[4/5]'>
-          <div
-            ref={backCardRef}
-            className='absolute top-8 left-8 right-0 bottom-0 bg-[#C9A84C]/10 border border-[#C9A84C]/20'
-            style={{ transform: 'rotate(-4deg)' }}
-          />
+    <section ref={sectionRef} style={{ background: C.bgAlt, padding: 'clamp(4rem,8vw,7rem) clamp(1.5rem,6vw,5rem)', overflow: 'hidden', position: 'relative' }}>
 
-          <div className='relative z-10 h-full bg-[#1C1916] border border-[#2A2520] flex flex-col items-center justify-center gap-4'>
-            <p className='font-accent text-7xl text-[#C9A84C]/30'>نور</p>
-            <p className='font-sans text-xs tracking-[0.4em] uppercase text-[#8B7340]'>
-              Light
-            </p>
-          </div>
-        </div>
+      {/* Animated background */}
+      <motion.div
+        style={{ scale: bgScale, position: 'absolute', inset: 0, background: C.bgAlt, zIndex: 0 }}
+      />
 
+      <div ref={ref} style={{
+        maxWidth: '1400px', margin: '0 auto',
+        display: 'grid',
+        gridTemplateColumns: 'repeat(1,1fr)',
+        gap: '3rem',
+        position: 'relative', zIndex: 1,
+      }}
+        className="md:grid-cols-2 md:gap-20 items-center"
+      >
+        {/* Left — quote */}
         <div>
-          <div className='flex items-center gap-3 mb-6'>
-            <span className='gold-line' />
-            <p className='font-sans text-[10px] tracking-[0.4em] uppercase text-[#C9A84C]'>
+          {/* Label */}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={inView ? { opacity: 1, x: 0 } : {}}
+            transition={{ duration: 0.6 }}
+            style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1.5rem' }}
+          >
+            <motion.span
+              initial={{ scaleX: 0 }}
+              animate={inView ? { scaleX: 1 } : {}}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              style={{ display: 'block', width: '24px', height: '1px', background: C.rose, transformOrigin: 'left' }}
+            />
+            <span style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', letterSpacing: '0.35em', textTransform: 'uppercase' as const, color: C.muted }}>
               Our Philosophy
-            </p>
-          </div>
+            </span>
+          </motion.div>
 
-          <div
-            className='font-display font-light leading-[1.1] text-[#F2EDE4]'
-            style={{ fontSize: 'clamp(1.8rem,3.5vw,3rem)' }}
-          >
-            <AnimatedText text='We do not sell products. We curate rituals.' tag='h2' />
-          </div>
-
-          <div className='mt-8 flex flex-col gap-4 max-w-xl'>
-            <p className='font-sans text-sm leading-relaxed text-[#B8B0A4]'>
-              Nuura is an editorial curation of tactile objects, elevated essentials, and self-care tools that feel intentional from shelf to skin.
-            </p>
-            <p className='font-sans text-sm leading-relaxed text-[#B8B0A4]'>
-              We choose less, but better. Every piece is selected for utility, beauty, and how it fits your daily ritual.
-            </p>
-          </div>
-
-          <Link
-            href='/shop'
-            data-cursor='hover'
-            className='inline-block mt-10 font-sans text-xs tracking-[0.2em] uppercase text-[#C9A84C] border-b border-[#C9A84C]/40 hover:text-[#E8C97A] transition-colors'
-          >
-            Explore the Edit {'->'}
-          </Link>
+          {/* Big quote — line by line */}
+          {['We don\'t sell', 'products.', 'We curate rituals.'].map((line, i) => (
+            <div key={i} style={{ overflow: 'hidden' }}>
+              <motion.div
+                initial={{ y: '105%' }}
+                animate={inView ? { y: '0%' } : {}}
+                transition={{ duration: 0.9, ease: [0.76, 0, 0.24, 1], delay: 0.1 + i * 0.12 }}
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: 'clamp(2rem,4.5vw,3.8rem)',
+                  fontWeight: 300,
+                  lineHeight: 1.1,
+                  letterSpacing: '-0.025em',
+                  color: i === 2 ? C.rose : C.ink,
+                  fontStyle: i === 2 ? 'italic' : 'normal',
+                }}
+              >
+                {line}
+              </motion.div>
+            </div>
+          ))}
         </div>
+
+        {/* Right — copy + Arabic */}
+        <motion.div
+          initial={{ opacity: 0, y: 32 }}
+          animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.8, delay: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
+        >
+          <p style={{ fontFamily: 'var(--font-sans)', fontSize: 'clamp(13px,1.5vw,15px)', lineHeight: 1.8, color: C.muted, marginBottom: '1.25rem' }}>
+            Nuura was born from a simple truth — Pakistani women deserve beauty that reflects their sophistication. Not fast fashion. Not cluttered marketplaces.
+          </p>
+          <p style={{ fontFamily: 'var(--font-sans)', fontSize: 'clamp(13px,1.5vw,15px)', lineHeight: 1.8, color: C.muted, marginBottom: '2.5rem' }}>
+            Every product we carry is tested, curated, and chosen because it earns its place in your ritual.
+          </p>
+
+          {/* Arabic with parallax */}
+          <motion.div
+            style={{ y: arabicY, fontFamily: 'var(--font-accent)', fontSize: 'clamp(3.5rem,6vw,5.5rem)', color: C.roseLight, lineHeight: 1, marginBottom: '2rem' }}
+          >
+            نور
+          </motion.div>
+
+          <Link href="/shop" data-cursor="hover"
+            style={{
+              fontFamily: 'var(--font-sans)', fontSize: '11px',
+              letterSpacing: '0.22em', textTransform: 'uppercase' as const,
+              color: C.rose, textDecoration: 'none',
+              borderBottom: `1px solid ${C.rose}`, paddingBottom: '3px',
+              display: 'inline-block', transition: 'opacity 250ms, letter-spacing 300ms',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.opacity = '0.7'
+              e.currentTarget.style.letterSpacing = '0.3em'
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.opacity = '1'
+              e.currentTarget.style.letterSpacing = '0.22em'
+            }}
+          >
+            Explore the Edit →
+          </Link>
+        </motion.div>
       </div>
     </section>
   )

@@ -5,92 +5,52 @@ import { useEffect, useState } from 'react'
 
 export function LoadingScreen() {
   const [visible, setVisible] = useState(true)
-  const [hasLoaded, setHasLoaded] = useState(false)
+  const [done, setDone] = useState(false)
 
   useEffect(() => {
     if (typeof window === 'undefined') return
-    const alreadyLoaded = sessionStorage.getItem('nuura-loaded')
-    if (alreadyLoaded) {
+    if (sessionStorage.getItem('nuura-v2-loaded')) { setVisible(false); setDone(true); return }
+    const t = setTimeout(() => {
       setVisible(false)
-      setHasLoaded(true)
-      return
-    }
-    const timer = setTimeout(() => {
-      setVisible(false)
-      sessionStorage.setItem('nuura-loaded', 'true')
-    }, 2200)
-    return () => clearTimeout(timer)
+      sessionStorage.setItem('nuura-v2-loaded', 'true')
+    }, 2400)
+    return () => clearTimeout(t)
   }, [])
 
-  if (hasLoaded) return null
+  if (done) return null
 
   return (
     <AnimatePresence>
       {visible && (
         <motion.div
           initial={{ opacity: 1 }}
-          exit={{ opacity: 0, transition: { duration: 0.7, ease: [0.76, 0, 0.24, 1], delay: 0.1 } }}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 99999,
-            background: '#FAF8F4',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '2rem',
-          }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.8, ease: [0.76, 0, 0.24, 1], delay: 0.2 }}
+          style={{ position: 'fixed', inset: 0, zIndex: 99999, background: '#1B2E1F', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1.5rem' }}
         >
-          {/* Logo reveal */}
           <div style={{ overflow: 'hidden' }}>
             <motion.div
               initial={{ y: '110%' }}
               animate={{ y: '0%' }}
-              transition={{ duration: 0.9, ease: [0.76, 0, 0.24, 1], delay: 0.2 }}
-              style={{
-                fontFamily: 'var(--font-accent)',
-                fontSize: 'clamp(2.5rem, 8vw, 5rem)',
-                letterSpacing: '0.5em',
-                color: '#1A1714',
-                textTransform: 'uppercase',
-                paddingRight: '0.5em',
-              }}
+              transition={{ duration: 1, ease: [0.76, 0, 0.24, 1], delay: 0.1 }}
+              style={{ fontFamily: 'var(--font-accent)', fontSize: 'clamp(3rem,8vw,6rem)', letterSpacing: '0.6em', color: '#F5F0E6', textTransform: 'uppercase', paddingRight: '0.6em' }}
             >
               NUURA
             </motion.div>
           </div>
-
-          {/* Tagline */}
           <motion.p
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.9 }}
-            style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: 'clamp(14px, 2vw, 18px)',
-              color: '#8C8078',
-              fontStyle: 'italic',
-              letterSpacing: '0.05em',
-            }}
+            style={{ fontFamily: 'var(--font-display)', fontSize: '16px', color: '#D4A853', fontStyle: 'italic', letterSpacing: '0.1em' }}
           >
             Glow in your own light
           </motion.p>
-
-          {/* Progress line */}
           <motion.div
             initial={{ scaleX: 0 }}
             animate={{ scaleX: 1 }}
-            transition={{ duration: 1.8, ease: [0.25, 0.1, 0.25, 1], delay: 0.3 }}
-            style={{
-              position: 'absolute',
-              bottom: 0,
-              left: 0,
-              height: '2px',
-              width: '100%',
-              background: '#C4614A',
-              transformOrigin: 'left',
-            }}
+            transition={{ duration: 2, ease: [0.25, 0.1, 0.25, 1], delay: 0.3 }}
+            style={{ position: 'absolute', bottom: 0, left: 0, height: '3px', width: '100%', background: '#D4A853', transformOrigin: 'left' }}
           />
         </motion.div>
       )}
