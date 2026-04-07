@@ -130,14 +130,7 @@ export default async function ProductPage({ params }: PageProps) {
       }}
     >
       <div style={{ padding: '0 clamp(1.5rem, 6vw, 5rem)' }}>
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(1, 1fr)',
-            gap: '3rem',
-          }}
-          className='md:grid-cols-[55%_45%] md:gap-16 items-start'
-        >
+        <div className='grid grid-cols-1 md:grid-cols-[55%_45%] gap-12 md:gap-16 items-start'>
           <ProductImages images={product.images} name={product.name} />
           <div style={{ position: 'sticky', top: '7rem' }}>
             <ProductInfo product={product} />
