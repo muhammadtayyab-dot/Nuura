@@ -15,7 +15,7 @@ export default function ProductImages({ images, name }: ProductImagesProps) {
 
   return (
     <div style={{ backgroundColor: '#1B2E1F' }}>
-      <div style={{ position: 'relative', aspectRatio: '3 / 4', overflow: 'hidden', backgroundColor: '#0F1A11' }}>
+      <div className="relative aspect-square sm:aspect-[4/5] lg:aspect-auto lg:h-[70vh] w-full overflow-hidden rounded-2xl" style={{ backgroundColor: '#0F1A11' }}>
         <AnimatePresence mode='wait'>
           <motion.div
             key={selectedIndex}
@@ -30,7 +30,7 @@ export default function ProductImages({ images, name }: ProductImagesProps) {
                 src={images[selectedIndex]}
                 alt={name}
                 fill
-                style={{ objectFit: 'cover', objectPosition: 'center' }}
+                className="object-cover object-center rounded-2xl"
                 sizes='(max-width: 768px) 100vw, 55vw'
                 priority={selectedIndex === 0}
               />
