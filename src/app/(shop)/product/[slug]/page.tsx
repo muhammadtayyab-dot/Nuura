@@ -124,8 +124,8 @@ export default async function ProductPage({ params }: PageProps) {
     <main
       style={{
         minHeight: '100vh',
-        backgroundColor: '#FAF8F4',
-        paddingTop: '6rem',
+        background: 'radial-gradient(circle at top center, #233A27 0%, #1B2E1F 60%)',
+        paddingTop: '8rem',
         paddingBottom: '6rem',
       }}
     >

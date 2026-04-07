@@ -14,8 +14,8 @@ export default function ProductImages({ images, name }: ProductImagesProps) {
   const hasImages = images.length > 0
 
   return (
-    <div style={{ backgroundColor: '#FAF8F4' }}>
-      <div style={{ position: 'relative', aspectRatio: '3 / 4', overflow: 'hidden', backgroundColor: '#F2EDE4' }}>
+    <div style={{ backgroundColor: '#1B2E1F' }}>
+      <div style={{ position: 'relative', aspectRatio: '3 / 4', overflow: 'hidden', backgroundColor: '#0F1A11' }}>
         <AnimatePresence mode='wait'>
           <motion.div
             key={selectedIndex}
@@ -35,7 +35,7 @@ export default function ProductImages({ images, name }: ProductImagesProps) {
                 priority={selectedIndex === 0}
               />
             ) : (
-              <div style={{ position: 'absolute', inset: 0, backgroundColor: '#F2EDE4' }} />
+              <div style={{ position: 'absolute', inset: 0, backgroundColor: '#0F1A11' }} />
             )}
           </motion.div>
         </AnimatePresence>
@@ -53,9 +53,9 @@ export default function ProductImages({ images, name }: ProductImagesProps) {
                 height: '72px',
                 overflow: 'hidden',
                 flexShrink: 0,
-                backgroundColor: '#F2EDE4',
+                backgroundColor: '#0F1A11',
                 border: 0,
-                outline: i === selectedIndex ? '1px solid #C4614A' : '1px solid transparent',
+                outline: i === selectedIndex ? '1px solid #D4A853' : '1px solid transparent',
                 outlineOffset: i === selectedIndex ? '2px' : '0px',
                 opacity: i === selectedIndex ? 1 : 0.75,
                 transition: 'opacity 200ms ease',

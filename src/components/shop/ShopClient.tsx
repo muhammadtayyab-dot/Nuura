@@ -36,10 +36,10 @@ export default function ShopClient({ initialProducts }: ShopClientProps) {
         onSortChange={setActiveSort}
       />
 
-      <section style={{ backgroundColor: '#FAF8F4' }}>
+      <section style={{ backgroundColor: '#1B2E1F', minHeight: '100vh' }}>
         <div style={{ padding: '4rem clamp(1.5rem, 6vw, 5rem)' }}>
           {filtered.length === 0 ? (
-            <p style={{ fontFamily: 'var(--font-sans)', fontSize: '13px', color: '#8C8078', textAlign: 'center', padding: '6rem 0' }}>
+            <p style={{ fontFamily: 'var(--font-sans)', fontSize: '13px', color: 'rgba(245,240,230,0.6)', textAlign: 'center', padding: '6rem 0' }}>
               No products found.
             </p>
           ) : (

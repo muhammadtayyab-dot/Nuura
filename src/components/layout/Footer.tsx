@@ -2,17 +2,52 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
+import { motion, useInView } from 'framer-motion'
+import { useRef } from 'react'
 
 const C = { forest: '#1B2E1F', cream: '#F5F0E6', gold: '#D4A853', muted: 'rgba(245,240,230,0.4)', border: 'rgba(245,240,230,0.08)' }
 
 export default function Footer() {
   const [email, setEmail] = useState('')
+  const ref = useRef(null)
+  const isInView = useInView(ref, { once: true, amount: 0.5 })
+
   return (
     <footer style={{ background: C.forest, padding: 'clamp(4rem,8vw,7rem) clamp(1.5rem,6vw,5rem) 0' }}>
-      <div style={{ textAlign: 'center', paddingBottom: 'clamp(3rem,6vw,5rem)', borderBottom: `1px solid ${C.border}`, marginBottom: 'clamp(3rem,6vw,5rem)' }}>
-        <div style={{ fontFamily: 'var(--font-accent)', fontSize: 'clamp(3rem,8vw,7rem)', letterSpacing: '0.5em', color: C.cream, textTransform: 'uppercase', paddingRight: '0.5em', lineHeight: 1 }}>NUURA</div>
-        <div style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(14px,2vw,18px)', color: C.gold, fontStyle: 'italic', marginTop: '1rem' }}>Glow in your own light</div>
-        <div style={{ width: '40px', height: '1px', background: C.gold, margin: '1.5rem auto 0' }} />
+      <div ref={ref} style={{ textAlign: 'center', paddingBottom: 'clamp(3rem,6vw,5rem)', borderBottom: `1px solid ${C.border}`, marginBottom: 'clamp(3rem,6vw,5rem)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <motion.div 
+          initial={{ opacity: 0, y: 40, letterSpacing: '0' }} 
+          animate={isInView ? { opacity: 1, y: 0, letterSpacing: '0.5em' } : {}} 
+          transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+          style={{ 
+            fontFamily: 'var(--font-accent)', 
+            fontSize: 'clamp(3.5rem,10vw,9rem)', 
+            color: C.cream, 
+            textTransform: 'uppercase', 
+            textIndent: '0.5em', // This properly centers text that has letter spacing
+            lineHeight: 1,
+            position: 'relative',
+            display: 'inline-block'
+          }}
+        >
+          NUURA
+        </motion.div>
+        
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9 }} 
+          animate={isInView ? { opacity: 1, scale: 1 } : {}} 
+          transition={{ duration: 0.8, delay: 0.6, ease: 'easeOut' }}
+          style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(14px,2vw,18px)', color: C.gold, fontStyle: 'italic', marginTop: '1rem' }}
+        >
+          Glow in your own light
+        </motion.div>
+        
+        <motion.div 
+          initial={{ scaleX: 0 }} 
+          animate={isInView ? { scaleX: 1 } : {}} 
+          transition={{ duration: 1, delay: 0.8, ease: 'easeInOut' }}
+          style={{ width: '40px', height: '1px', background: C.gold, margin: '1.5rem auto 0' }} 
+        />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: '2.5rem', marginBottom: 'clamp(3rem,6vw,5rem)' }} className="md:grid-cols-4">

@@ -28,11 +28,10 @@ export default function Navbar() {
     return () => { document.body.style.overflow = '' }
   }, [menuOpen])
 
-  const isForest = pathname === '/'
-  const textColor = isForest && !scrolled ? '#F5F0E6' : '#0F1A11'
-  const bg = scrolled ? 'rgba(250,250,248,0.95)' : 'transparent'
+  const textColor = !scrolled ? '#F5F0E6' : '#F5F0E6' /* Since everything is dark now, always cream text */
+  const bg = scrolled ? 'rgba(27,46,31,0.95)' : 'transparent'
   const blur = scrolled ? 'blur(16px)' : 'none'
-  const border = scrolled ? '1px solid #DDD8CF' : '1px solid transparent'
+  const border = scrolled ? '1px solid rgba(245,240,230,0.1)' : '1px solid transparent'
 
   return (
     <>
@@ -40,13 +39,17 @@ export default function Navbar() {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-        style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50, height: '72px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 clamp(1.5rem,6vw,5rem)', backgroundColor: bg, backdropFilter: blur, borderBottom: border, transition: 'all 350ms ease' }}
+        style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50, height: '72px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 clamp(1rem,6vw,5rem)', backgroundColor: bg, backdropFilter: blur, borderBottom: border, transition: 'all 350ms ease' }}
       >
-        <Link href="/" data-cursor="hover" style={{ textDecoration: 'none', flexShrink: 0 }}>
+        <div className="flex md:hidden items-center" style={{ width: '80px' }}> 
+          <button onClick={() => setMenuOpen(true)} style={{ padding: '0.5rem', color: textColor, background: 'transparent', border: 0, marginLeft: '-0.5rem' }}><Menu size={20} strokeWidth={1} /></button>
+        </div>
+
+        <Link href="/" data-cursor="hover" className="md:flex-none flex-1 flex justify-center md:justify-start" style={{ textDecoration: 'none', zIndex: 60 }}>
           <span style={{ fontFamily: 'var(--font-accent)', fontSize: '20px', letterSpacing: '0.45em', color: textColor, textTransform: 'uppercase', transition: 'color 350ms' }}>NUURA</span>
         </Link>
 
-        <nav style={{ display: 'flex', alignItems: 'center', gap: '2.5rem', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }} className="hidden md:flex">
+        <style>{`@media (max-width: 768px) { .desktop-hide { display: none !important; } }`}</style><nav style={{ alignItems: 'center', gap: '2.5rem', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }} className="hidden md:flex desktop-hide">
           {NAV_LINKS.map(link => {
             const active = pathname === link.href
             return (
@@ -62,10 +65,10 @@ export default function Navbar() {
           })}
         </nav>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+<div className="flex items-center justify-end" style={{ gap: '0.25rem', width: '80px' }}> 
           {[
-            <button key="search" style={{ padding: '0.5rem', color: textColor, background: 'transparent', border: 0, transition: 'color 300ms' }} data-cursor="hover" aria-label="Search" onMouseEnter={e => { e.currentTarget.style.color = '#D4A853' }} onMouseLeave={e => { e.currentTarget.style.color = textColor }}><Search size={18} strokeWidth={1} /></button>,
-            <button key="cart" onClick={openCart} style={{ position: 'relative', padding: '0.5rem', color: textColor, background: 'transparent', border: 0, transition: 'color 300ms' }} data-cursor="hover" aria-label="Cart" onMouseEnter={e => { e.currentTarget.style.color = '#D4A853' }} onMouseLeave={e => { e.currentTarget.style.color = textColor }}>
+            <button className="hidden md:block" key="search" style={{ padding: '0.5rem', color: textColor, background: 'transparent', border: 0, transition: 'color 300ms' }} data-cursor="hover" aria-label="Search" onMouseEnter={e => { e.currentTarget.style.color = '#D4A853' }} onMouseLeave={e => { e.currentTarget.style.color = textColor }}><Search size={18} strokeWidth={1} /></button>,
+            <button key="cart" onClick={openCart} style={{ position: 'relative', padding: '0.5rem', color: textColor, background: 'transparent', border: 0, transition: 'color 300ms', marginRight: '-0.5rem' }} data-cursor="hover" aria-label="Cart" onMouseEnter={e => { e.currentTarget.style.color = '#D4A853' }} onMouseLeave={e => { e.currentTarget.style.color = textColor }}>
               <ShoppingBag size={18} strokeWidth={1} />
               <AnimatePresence>
                 {totalItems > 0 && (
@@ -77,7 +80,6 @@ export default function Navbar() {
               </AnimatePresence>
             </button>,
           ]}
-          <button className="md:hidden" onClick={() => setMenuOpen(true)} style={{ padding: '0.5rem', color: textColor, background: 'transparent', border: 0 }}><Menu size={20} strokeWidth={1} /></button>
         </div>
       </motion.header>
 

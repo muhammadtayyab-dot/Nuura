@@ -83,11 +83,11 @@ function Hero() {
           <motion.span initial={{ scaleX:0 }} animate={{ scaleX:1 }} transition={{ duration:0.5, delay:0.3 }}
             style={{ display:'block', width:'32px', height:'1px', background:C.gold, transformOrigin:'left' }} />
           <span style={{ fontFamily:'var(--font-sans)', fontSize:'10px', letterSpacing:'0.4em', textTransform:'uppercase' as const, color:'rgba(245,240,230,0.6)' }}>
-            New Collection — 2025
+            New Collection — 2026
           </span>
         </motion.div>
 
-        <h1 style={{ fontFamily:'var(--font-display)', fontWeight:300, lineHeight:0.88, letterSpacing:'-0.03em', fontSize:'clamp(4.5rem,13vw,13rem)', margin:'0 0 clamp(2rem,3vw,3rem)', color:C.cream }}>
+        <h1 style={{ fontFamily:'var(--font-display)', fontWeight:300, lineHeight:0.92, letterSpacing:'-0.03em', fontSize:'clamp(3.5rem,9vw,9rem)', margin:'0 0 clamp(2rem,3vw,3rem)', color:C.cream }}>
           {[{t:'Your',i:false,g:false},{t:'glow,',i:true,g:false},{t:'your',i:false,g:false},{t:'ritual.',i:true,g:true}].map((w,i) => (
             <div key={i} style={{ overflow:'hidden', display:'block' }}>
               <motion.span initial={{ y:'110%', skewY:3 }} animate={{ y:'0%', skewY:0 }} transition={{ duration:1, ease:[0.76,0,0.24,1], delay:0.3+i*0.1 }}
@@ -145,13 +145,13 @@ function Marquee({ bg=C.forest, color=C.cream, duration=55, reverse=false }: { b
 function StatsBar() {
   const { ref, inView } = useInView(0.3)
   return (
-    <section style={{ background:C.offwhite, padding:'clamp(2.5rem,5vw,4rem) clamp(1.5rem,6vw,5rem)' }}>
+    <section style={{ background:C.ink, padding:'clamp(2.5rem,5vw,4rem) clamp(1.5rem,6vw,5rem)' }}>
       <div ref={ref} style={{ maxWidth:'1400px', margin:'0 auto', display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:'2rem' }} className="md:grid-cols-4">
         {STATS.map((s,i) => (
           <motion.div key={i} initial={{ opacity:0, y:24 }} animate={inView?{ opacity:1, y:0 }:{} } transition={{ duration:0.6, delay:i*0.1 }}
-            style={{ textAlign:'center' as const, padding:'1.5rem', borderLeft: i>0?`1px solid ${C.border}`:'none' }}>
-            <div style={{ fontFamily:'var(--font-display)', fontSize:'clamp(2rem,4vw,3.2rem)', fontWeight:300, color:C.forest, lineHeight:1 }}>{s.value}</div>
-            <div style={{ fontFamily:'var(--font-sans)', fontSize:'11px', letterSpacing:'0.2em', textTransform:'uppercase' as const, color:C.muted, marginTop:'8px' }}>{s.label}</div>
+            style={{ textAlign:'center' as const, padding:'1.5rem', borderLeft: i>0?`1px solid rgba(245,240,230,0.1)`:'none' }}>
+            <div style={{ fontFamily:'var(--font-display)', fontSize:'clamp(2rem,4vw,3.2rem)', fontWeight:300, color:C.cream, lineHeight:1 }}>{s.value}</div>
+            <div style={{ fontFamily:'var(--font-sans)', fontSize:'11px', letterSpacing:'0.2em', textTransform:'uppercase' as const, color:'rgba(245,240,230,0.6)', marginTop:'8px' }}>{s.label}</div>
           </motion.div>
         ))}
       </div>
@@ -174,11 +174,11 @@ function PCard({ p, i }: { p:typeof PRODUCTS[0]; i:number }) {
             Quick Add +
           </div>
         </div>
-        <p style={{ fontFamily:'var(--font-display)', fontSize:'1.2rem', color:C.ink, margin:'0 0 4px', letterSpacing:'-0.01em' }}>{p.name}</p>
-        <p style={{ fontFamily:'var(--font-sans)', fontSize:'12px', color:C.muted, margin:'0 0 10px' }}>{p.tagline}</p>
+        <p style={{ fontFamily:'var(--font-display)', fontSize:'1.2rem', color:C.cream, margin:'0 0 4px', letterSpacing:'-0.01em' }}>{p.name}</p>
+        <p style={{ fontFamily:'var(--font-sans)', fontSize:'12px', color:'rgba(245,240,230,0.6)', margin:'0 0 10px' }}>{p.tagline}</p>
         <div style={{ display:'flex', gap:'10px', alignItems:'center' }}>
-          <span style={{ fontFamily:'var(--font-sans)', fontSize:'14px', color:C.forest, fontWeight:500 }}>{p.price}</span>
-          {p.comparePrice && <span style={{ fontFamily:'var(--font-sans)', fontSize:'12px', color:C.muted, textDecoration:'line-through' }}>{p.comparePrice}</span>}
+          <span style={{ fontFamily:'var(--font-sans)', fontSize:'14px', color:C.gold, fontWeight:500 }}>{p.price}</span>
+          {p.comparePrice && <span style={{ fontFamily:'var(--font-sans)', fontSize:'12px', color:'rgba(245,240,230,0.4)', textDecoration:'line-through' }}>{p.comparePrice}</span>}
         </div>
       </motion.div>
     </Link>
@@ -187,36 +187,67 @@ function PCard({ p, i }: { p:typeof PRODUCTS[0]; i:number }) {
 
 // ── DESKTOP HORIZONTAL SCROLL WITH ARROWS ─────────────────────────
 function DesktopProducts() {
-  const containerRef = useRef<HTMLDivElement>(null)
   const [current, setCurrent] = useState(0)
-  const { scrollYProgress } = useScroll({ target:containerRef, offset:['start start','end end'] })
-  const x = useTransform(scrollYProgress, [0,1], ['0%','-62%'])
+  const itemsPerView = 4
+  const pages = []
+  for (let i = 0; i < PRODUCTS.length; i += itemsPerView) {
+    pages.push(PRODUCTS.slice(i, i + itemsPerView))
+  }
+  const totalPages = pages.length
+  const canGoNext = current < totalPages - 1
+  const canGoPrev = current > 0
+
+  const prev = () => {
+    if (canGoPrev) setCurrent(c => c - 1)
+  }
+  const next = () => {
+    if (canGoNext) setCurrent(c => c + 1)
+  }
 
   return (
-    <div ref={containerRef} style={{ height:'520vh', position:'relative', background:C.white }}>
-      <div style={{ position:'sticky', top:0, height:'100vh', overflow:'hidden', background:C.white }}>
-        <div style={{ position:'absolute', top:0, left:0, right:0, zIndex:2, padding:'clamp(1.5rem,3vw,2.5rem) clamp(1.5rem,6vw,5rem)', display:'flex', justifyContent:'space-between', alignItems:'flex-end' }}>
+    <div style={{ background:C.forest, padding:'clamp(5rem,10vw,8rem) clamp(1.5rem,6vw,5rem)' }}>
+      <div style={{ maxWidth:'1400px', margin:'0 auto' }}>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-end', marginBottom:'3rem' }}>
           <div>
             <div style={{ display:'flex', alignItems:'center', gap:'10px', marginBottom:'0.75rem' }}>
               <span style={{ display:'block', width:'24px', height:'1px', background:C.gold }} />
-              <span style={{ fontFamily:'var(--font-sans)', fontSize:'10px', letterSpacing:'0.35em', textTransform:'uppercase' as const, color:C.muted }}>Featured Drop</span>
+              <span style={{ fontFamily:'var(--font-sans)', fontSize:'10px', letterSpacing:'0.35em', textTransform:'uppercase' as const, color:'rgba(245,240,230,0.4)' }}>Featured Drop</span>
             </div>
-            <h2 style={{ fontFamily:'var(--font-display)', fontSize:'clamp(2rem,4vw,3.5rem)', fontWeight:300, color:C.ink, margin:0, letterSpacing:'-0.025em' }}>This season&apos;s obsessions.</h2>
+            <h2 style={{ fontFamily:'var(--font-display)', fontSize:'clamp(2rem,4vw,3.5rem)', fontWeight:300, color:C.cream, margin:0, letterSpacing:'-0.025em' }}>This season&apos;s obsessions.</h2>
           </div>
-          <div style={{ display:'flex', alignItems:'center', gap:'2rem' }}>
-            <Link href="/shop" data-cursor="hover" style={{ fontFamily:'var(--font-sans)', fontSize:'11px', letterSpacing:'0.22em', textTransform:'uppercase' as const, color:C.gold, textDecoration:'none', borderBottom:`1px solid ${C.gold}`, paddingBottom:'2px' }}>View All →</Link>
+          <div style={{ display:'flex', alignItems:'center', gap:'1.5rem' }}>
+            <div style={{ display:'flex', gap:'12px' }}>
+              <button onClick={prev} disabled={!canGoPrev}
+                style={{ width:'48px', height:'48px', border:`1px solid ${canGoPrev?'rgba(245,240,230,0.3)':'rgba(245,240,230,0.08)'}`, background:'transparent', display:'flex', alignItems:'center', justifyContent:'center', cursor:canGoPrev?'pointer':'not-allowed', opacity:canGoPrev?1:0.3, transition:'all 200ms' }}>
+                <ChevronLeft size={20} color={C.cream} strokeWidth={1.5} />
+              </button>
+              <button onClick={next} disabled={!canGoNext}
+                style={{ width:'48px', height:'48px', border:`1px solid ${canGoNext?'rgba(245,240,230,0.3)':'rgba(245,240,230,0.08)'}`, background:canGoNext?'rgba(212,168,83,0.1)':'transparent', display:'flex', alignItems:'center', justifyContent:'center', cursor:canGoNext?'pointer':'not-allowed', opacity:canGoNext?1:0.3, transition:'all 200ms' }}>
+                <ChevronRight size={20} color={C.cream} strokeWidth={1.5} />
+              </button>
+            </div>
+            <Link href="/shop" data-cursor="hover" style={{ fontFamily:'var(--font-sans)', fontSize:'11px', letterSpacing:'0.22em', textTransform:'uppercase' as const, color:C.gold, textDecoration:'none', borderBottom:`1px solid ${C.gold}`, paddingBottom:'2px', whiteSpace:'nowrap' }}>View All →</Link>
           </div>
         </div>
-        <motion.div style={{ x, display:'flex', gap:'2rem', height:'100%', alignItems:'center', paddingLeft:'clamp(1.5rem,6vw,5rem)', paddingRight:'25vw', paddingTop:'8rem' }}>
-          {PRODUCTS.map((p,i) => (
-            <div key={p.id} style={{ width:'clamp(240px,22vw,300px)', flexShrink:0 }}><PCard p={p} i={i} /></div>
+
+        <div style={{ overflow:'hidden', marginBottom:'2rem' }}>
+          <motion.div animate={{ x:`-${current * (100 / totalPages)}%` }} transition={{ duration:0.6, ease:[0.25,0.1,0.25,1] }} style={{ display:'flex', width:`${totalPages * 100}%` }}>
+            {pages.map((page, pageIndex) => (
+              <div key={pageIndex} style={{ display:'grid', gridTemplateColumns:`repeat(${itemsPerView}, 1fr)`, gap:'2rem', width:`${100 / totalPages}%`, flexShrink:0 }}>
+                {page.map((p, i) => (
+                  <div key={p.id} style={{ minWidth:0 }}>
+                    <PCard p={p} i={p.id as unknown as number} />
+                  </div>
+                ))}
+              </div>
+            ))}
+          </motion.div>
+        </div>
+
+        <div style={{ display:'flex', justifyContent:'center', gap:'6px' }}>
+          {[...Array(totalPages)].map((_,i) => (
+            <button key={i} onClick={()=>setCurrent(i)} style={{ width:i===current?'24px':'6px', height:'6px', borderRadius:'3px', background:i===current?C.gold:C.border, border:'none', padding:0, cursor:'pointer', transition:'all 300ms' }} />
           ))}
-        </motion.div>
-        <div style={{ position:'absolute', bottom:'2.5rem', left:'50%', transform:'translateX(-50%)', display:'flex', alignItems:'center', gap:'16px' }}>
-          <span style={{ fontFamily:'var(--font-sans)', fontSize:'10px', letterSpacing:'0.3em', textTransform:'uppercase' as const, color:C.muted }}>Scroll down to explore</span>
-          <div style={{ width:'100px', height:'1px', background:C.border, position:'relative', overflow:'hidden' }}>
-            <motion.div style={{ position:'absolute', inset:0, background:C.gold, scaleX:scrollYProgress, transformOrigin:'left' }} />
-          </div>
         </div>
       </div>
     </div>
@@ -231,24 +262,24 @@ function MobileProducts() {
   const next = () => setActive(p => Math.min(p+1, PRODUCTS.length-1))
 
   return (
-    <div style={{ background:C.white, paddingTop:'3rem', paddingBottom:'2.5rem' }}>
+    <div style={{ background:C.forest, paddingTop:'3rem', paddingBottom:'2.5rem' }}>
       <div style={{ padding:'0 1.5rem 2rem', display:'flex', justifyContent:'space-between', alignItems:'flex-end' }}>
         <div>
           <div style={{ display:'flex', alignItems:'center', gap:'10px', marginBottom:'0.5rem' }}>
             <span style={{ display:'block', width:'20px', height:'1px', background:C.gold }} />
-            <span style={{ fontFamily:'var(--font-sans)', fontSize:'10px', letterSpacing:'0.35em', textTransform:'uppercase' as const, color:C.muted }}>Featured</span>
+            <span style={{ fontFamily:'var(--font-sans)', fontSize:'10px', letterSpacing:'0.35em', textTransform:'uppercase' as const, color:'rgba(245,240,230,0.4)' }}>Featured</span>
           </div>
-          <h2 style={{ fontFamily:'var(--font-display)', fontSize:'2rem', fontWeight:300, color:C.ink, margin:0, letterSpacing:'-0.02em' }}>This season&apos;s<br/>obsessions.</h2>
+          <h2 style={{ fontFamily:'var(--font-display)', fontSize:'2rem', fontWeight:300, color:C.cream, margin:0, letterSpacing:'-0.02em' }}>This season&apos;s<br/>obsessions.</h2>
         </div>
         {/* Arrow navigation */}
         <div style={{ display:'flex', gap:'8px' }}>
           <button onClick={prev} disabled={active===0}
-            style={{ width:'44px', height:'44px', border:`1px solid ${active===0?C.border:C.forest}`, background:'transparent', display:'flex', alignItems:'center', justifyContent:'center', cursor:active===0?'not-allowed':'pointer', opacity:active===0?0.3:1, transition:'all 200ms' }}>
-            <ChevronLeft size={18} color={C.forest} strokeWidth={1.5} />
+            style={{ width:'44px', height:'44px', border:`1px solid ${active===0?'rgba(245,240,230,0.08)':'rgba(245,240,230,0.3)'}`, background:'transparent', display:'flex', alignItems:'center', justifyContent:'center', cursor:active===0?'not-allowed':'pointer', opacity:active===0?0.3:1, transition:'all 200ms' }}>
+            <ChevronLeft size={18} color={C.cream} strokeWidth={1.5} />
           </button>
           <button onClick={next} disabled={active===PRODUCTS.length-1}
-            style={{ width:'44px', height:'44px', border:`1px solid ${active===PRODUCTS.length-1?C.border:C.forest}`, background:active===PRODUCTS.length-1?'transparent':C.forest, display:'flex', alignItems:'center', justifyContent:'center', cursor:active===PRODUCTS.length-1?'not-allowed':'pointer', opacity:active===PRODUCTS.length-1?0.3:1, transition:'all 200ms' }}>
-            <ChevronRight size={18} color={active===PRODUCTS.length-1?C.forest:C.cream} strokeWidth={1.5} />
+            style={{ width:'44px', height:'44px', border:`1px solid ${active===PRODUCTS.length-1?'rgba(245,240,230,0.08)':'rgba(245,240,230,0.3)'}`, background:active===PRODUCTS.length-1?'transparent':'rgba(212,168,83,0.1)', display:'flex', alignItems:'center', justifyContent:'center', cursor:active===PRODUCTS.length-1?'not-allowed':'pointer', opacity:active===PRODUCTS.length-1?0.3:1, transition:'all 200ms' }}>
+            <ChevronRight size={18} color={C.cream} strokeWidth={1.5} />
           </button>
         </div>
       </div>
@@ -256,9 +287,9 @@ function MobileProducts() {
       <div style={{ overflow:'hidden', paddingLeft:'1.5rem' }}
         onTouchStart={e=>{ startX.current=e.touches[0].clientX }}
         onTouchEnd={e=>{ const d=startX.current-e.changedTouches[0].clientX; if(Math.abs(d)>40){ if(d>0)next(); else prev() } }}>
-        <motion.div animate={{ x:`calc(-${active*80}vw)` }} transition={{ duration:0.5, ease:[0.25,0.1,0.25,1] }} style={{ display:'flex', gap:'1rem' }}>
+        <motion.div animate={{ x:`calc(-${active*58}vw - ${active*1}rem)` }} transition={{ duration:0.5, ease:[0.25,0.1,0.25,1] }} style={{ display:'flex', gap:'1rem' }}>
           {PRODUCTS.map((p,i) => (
-            <div key={p.id} style={{ width:'74vw', flexShrink:0 }}><PCard p={p} i={i} /></div>
+            <div key={p.id} style={{ width:'58vw', flexShrink:0 }}><PCard p={p} i={i} /></div>
           ))}
         </motion.div>
       </div>
@@ -350,7 +381,7 @@ function Reviews() {
               <span style={{ fontFamily:'var(--font-sans)', fontSize:'10px', letterSpacing:'0.35em', textTransform:'uppercase' as const, color:'rgba(245,240,230,0.4)' }}>Customer Love</span>
             </div>
             <h2 style={{ fontFamily:'var(--font-display)', fontSize:'clamp(2rem,4vw,3.5rem)', fontWeight:300, color:C.cream, margin:0, letterSpacing:'-0.025em' }}>
-              Real women. Real results.
+              Loved by thousands. Trusted by all.
             </h2>
           </div>
           <div style={{ display:'flex', gap:'8px' }}>
@@ -373,12 +404,15 @@ function Reviews() {
           <AnimatePresence mode="wait">
             {visible.map((r,i) => (
               <motion.div key={`${active}-${i}`}
-                initial={{ opacity:0, y:24, scale:0.97 }}
-                animate={{ opacity:1, y:0, scale:1 }}
-                exit={{ opacity:0, y:-24, scale:0.97 }}
-                transition={{ duration:0.5, delay:i*0.08 }}
-                style={{ background:'rgba(245,240,230,0.06)', border:'1px solid rgba(245,240,230,0.08)', padding:'clamp(1.5rem,3vw,2.5rem)' }}>
-                <Quote size={24} color={C.gold} strokeWidth={1} style={{ marginBottom:'1.25rem', opacity:0.6 }} />
+                initial={{ opacity:0, x:-150 }}
+                animate={{ opacity:1, x:0 }}
+                exit={{ opacity:0, x:150 }}
+                transition={{ duration:0.8, delay:i*0.15, ease:[0.22,1,0.36,1] }}
+                style={{ position:'relative', background:'rgba(245,240,230,0.06)', border:'1px solid rgba(245,240,230,0.08)', padding:'clamp(1.5rem,3vw,2.5rem)' }}>
+                <motion.div style={{ position:'absolute', left:0, top:0, bottom:0, width:'4px', background:C.gold, borderRadius:'2px' }} initial={{ scaleY:0 }} animate={{ scaleY:1 }} transition={{ duration:1, delay:i*0.15+0.3, ease:[0.76,0,0.24,1] }} />
+                <motion.div initial={{ rotate:-180, opacity:0, scale:0 }} animate={{ rotate:0, opacity:1, scale:1 }} transition={{ duration:0.5, delay:i*0.1+0.1 }}>
+                  <Quote size={24} color={C.gold} strokeWidth={1} style={{ marginBottom:'1.25rem', opacity:0.6 }} />
+                </motion.div>
                 <p style={{ fontFamily:'var(--font-sans)', fontSize:'14px', lineHeight:1.75, color:'rgba(245,240,230,0.75)', marginBottom:'1.5rem' }}>
                   &ldquo;{r.text}&rdquo;
                 </p>
@@ -425,14 +459,16 @@ function PromiseStrip() {
     { n:'03', title:'Limited drops', desc:"When it's gone, it's gone. New drops every season." },
   ]
   return (
-    <section style={{ background:C.white, padding:'clamp(5rem,10vw,8rem) clamp(1.5rem,6vw,5rem)', borderTop:`1px solid ${C.border}` }}>
+    <section style={{ background:C.ink, padding:'clamp(5rem,10vw,8rem) clamp(1.5rem,6vw,5rem)', borderTop:`1px solid rgba(245,240,230,0.05)` }}>
       <div ref={ref} style={{ maxWidth:'1400px', margin:'0 auto', display:'grid', gridTemplateColumns:'repeat(1,1fr)', gap:'0' }} className="md:grid-cols-3">
         {items.map((item,i) => (
           <motion.div key={i} initial={{ opacity:0, y:40 }} animate={inView?{ opacity:1, y:0 }:{} } transition={{ duration:0.8, delay:i*0.15 }}
-            style={{ padding:'clamp(2rem,3vw,3rem)', borderLeft:i>0?`1px solid ${C.border}`:'none', borderTop:`3px solid ${i===0?C.gold:'transparent'}` }}>
-            <div style={{ fontFamily:'var(--font-display)', fontSize:'3.5rem', color:'rgba(212,168,83,0.15)', lineHeight:1, marginBottom:'1.5rem', fontWeight:300 }}>{item.n}</div>
-            <h3 style={{ fontFamily:'var(--font-display)', fontSize:'clamp(1.4rem,2.5vw,2rem)', fontWeight:300, color:C.ink, margin:'0 0 1rem', letterSpacing:'-0.01em' }}>{item.title}</h3>
-            <p style={{ fontFamily:'var(--font-sans)', fontSize:'14px', lineHeight:1.75, color:C.muted, margin:0 }}>{item.desc}</p>
+            style={{ padding:'clamp(2rem,3vw,3rem)', borderLeft:i>0?`1px solid rgba(245,240,230,0.05)`:'none', borderTop:`3px solid ${i===0?C.gold:'transparent'}`, transition:'background 300ms' }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(245,240,230,0.02)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+            <div style={{ fontFamily:'var(--font-display)', fontSize:'3.5rem', color:'rgba(212,168,83,0.3)', lineHeight:1, marginBottom:'1.5rem', fontWeight:300 }}>{item.n}</div>
+            <h3 style={{ fontFamily:'var(--font-display)', fontSize:'clamp(1.4rem,2.5vw,2rem)', fontWeight:300, color:C.cream, margin:'0 0 1rem', letterSpacing:'-0.01em' }}>{item.title}</h3>
+            <p style={{ fontFamily:'var(--font-sans)', fontSize:'14px', lineHeight:1.75, color:'rgba(245,240,230,0.6)', margin:0 }}>{item.desc}</p>
           </motion.div>
         ))}
       </div>

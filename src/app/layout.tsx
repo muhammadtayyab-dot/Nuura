@@ -5,6 +5,7 @@ import QueryProvider from '@/providers/QueryProvider'
 import SmoothScrollProvider from '@/providers/SmoothScrollProvider'
 import { CustomCursor } from '@/components/shared/CustomCursor'
 import { LoadingScreen } from '@/components/shared/LoadingScreen'
+import NuuraChat from '@/components/shared/NuuraChat'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -36,6 +37,7 @@ export default function RootLayout({
             <LoadingScreen />
             <CustomCursor />
             {children}
+            <NuuraChat />
           </QueryProvider>
         </SmoothScrollProvider>
       </body>

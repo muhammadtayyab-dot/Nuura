@@ -20,21 +20,12 @@ export default function FilterBar({ activeCategory, activeSort, onCategoryChange
         position: 'sticky',
         top: '72px',
         zIndex: 40,
-        backgroundColor: 'rgba(250,248,244,0.95)',
+        backgroundColor: 'rgba(27,46,31,0.95)',
         backdropFilter: 'blur(12px)',
-        borderBottom: '1px solid #E8E0D8',
+        borderBottom: '1px solid rgba(245,240,230,0.1)',
       }}
     >
-      <div
-        style={{
-          padding: '1rem clamp(1.5rem, 6vw, 5rem)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '1rem',
-          flexWrap: 'wrap',
-        }}
-      >
+      <div style={{ padding: '1rem clamp(1.5rem, 6vw, 5rem)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
           {CATEGORIES.map((cat) => (
             <button
@@ -49,20 +40,20 @@ export default function FilterBar({ activeCategory, activeSort, onCategoryChange
                 borderRadius: 0,
                 cursor: 'pointer',
                 transition: 'all 200ms ease',
-                border: activeCategory === cat.value ? '1px solid #1A1714' : '1px solid #E8E0D8',
-                backgroundColor: activeCategory === cat.value ? '#1A1714' : 'transparent',
-                color: activeCategory === cat.value ? '#FAF8F4' : '#8C8078',
+                border: activeCategory === cat.value ? '1px solid #D4A853' : '1px solid rgba(245,240,230,0.15)',
+                backgroundColor: activeCategory === cat.value ? '#D4A853' : 'transparent',
+                color: activeCategory === cat.value ? '#1B2E1F' : 'rgba(245,240,230,0.6)',
               }}
               onMouseEnter={(e) => {
                 if (activeCategory !== cat.value) {
-                  e.currentTarget.style.borderColor = '#1A1714'
-                  e.currentTarget.style.color = '#1A1714'
+                  e.currentTarget.style.borderColor = '#D4A853'
+                  e.currentTarget.style.color = '#F5F0E6'
                 }
               }}
               onMouseLeave={(e) => {
                 if (activeCategory !== cat.value) {
-                  e.currentTarget.style.borderColor = '#E8E0D8'
-                  e.currentTarget.style.color = '#8C8078'
+                  e.currentTarget.style.borderColor = 'rgba(245,240,230,0.15)'
+                  e.currentTarget.style.color = 'rgba(245,240,230,0.6)'
                 }
               }}
             >
@@ -75,9 +66,9 @@ export default function FilterBar({ activeCategory, activeSort, onCategoryChange
           value={activeSort}
           onChange={(e) => onSortChange(e.target.value)}
           style={{
-            backgroundColor: 'transparent',
-            border: '1px solid #E8E0D8',
-            color: '#8C8078',
+            backgroundColor: '#0F1A11',
+            border: '1px solid rgba(245,240,230,0.15)',
+            color: '#F5F0E6',
             fontFamily: 'var(--font-sans)',
             fontSize: '11px',
             padding: '0.5rem 0.75rem',
