@@ -420,6 +420,37 @@ What would you like help with?`,
         }
       }
 
+      // ===== USE INTELLIGENT AI FOR UNMATCHED QUERIES =====
+      try {
+        const aiResponse = await fetch('/api/ai-chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages: [
+              ...conversationRef.current.slice(-6).map((m) => ({
+                role: m.role === 'user' ? 'user' : 'assistant',
+                content: m.content.substring(0, 300),
+              })),
+              { role: 'user', content: userMessage },
+            ],
+            useHuggingFace: true,
+          }),
+        })
+
+        if (aiResponse.ok) {
+          const data = await aiResponse.json()
+          if (data.response && !data.loading) {
+            return {
+              id: Date.now().toString(),
+              role: 'ai',
+              content: data.response,
+            }
+          }
+        }
+      } catch (error) {
+        console.error('AI Chat error:', error)
+      }
+
       // ===== DEFAULT FALLBACK =====
       return {
         id: Date.now().toString(),
@@ -445,13 +476,13 @@ What would you like help with?`,
     const typingMsg: ChatMessage = {
       id: Date.now().toString() + '-typing',
       role: 'ai',
-      content: 'Thinking...',
+      content: 'Thinking... 💭',
       isTyping: true,
     }
     setMessages((prev) => [...prev, typingMsg])
 
-    // Simulate slight delay for natural feel
-    await new Promise((resolve) => setTimeout(resolve, 500))
+    // Simulate slight delay for natural feel (HF inference takes time)
+    await new Promise((resolve) => setTimeout(resolve, 800))
 
     const response = await processUserMessage(userText)
     setMessages((prev) => prev.filter((m) => m.id !== typingMsg.id) .concat(response))
