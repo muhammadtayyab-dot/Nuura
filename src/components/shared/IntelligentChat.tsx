@@ -103,10 +103,13 @@ What would you like help with?`,
         'a','an','the','and','or','to','for','of','in','on','at','with','me','my','your','you','i','we','us',
         'show','find','search','looking','want','need','please','help','some','any','give','tell',
       ])
-      const tokens = lower
+      const rawTokens = lower
         .split(/[^a-z0-9]+/)
         .map((t) => t.trim())
         .filter((t) => t.length >= 3 && !stopwords.has(t))
+
+      // Treat the literal word "product(s)" as intent, not a search token.
+      const tokens = rawTokens.filter((t) => t !== 'product' && t !== 'products')
 
       // Parse price filters
       let minPrice = 0
@@ -134,7 +137,7 @@ What would you like help with?`,
 
       // If the user is explicitly asking to browse products, show the catalog.
       // (Do not treat unrelated short messages as product searches.)
-      const isBrowseQuery = /\bproducts?\b/.test(lower) && tokens.length === 0
+      const isBrowseQuery = /^\s*products?\s*$/.test(lower) || (/\bproducts?\b/.test(lower) && tokens.length === 0)
       if (
         isBrowseQuery ||
         lower.includes('all product') ||
@@ -166,6 +169,11 @@ What would you like help with?`,
       }
       if (lower.includes('best seller') || lower.includes('popular') || lower.includes('trending')) {
         results = allProducts.filter((p) => p.isFeatured || p.isNewDrop)
+      }
+
+      // Helpful fallback: "product for skin" / "skincare" often means "show self-care".
+      if (results.length === 0 && categoryFilter === 'self-care' && (lower.includes('skin') || lower.includes('skincare'))) {
+        results = allProducts.filter((p) => p.category === 'self-care')
       }
 
       // If we still have zero tokens (e.g. "huh", "ok"), avoid accidental matches.
@@ -217,7 +225,7 @@ What would you like help with?`,
         ? [mentioned, ...related].slice(0, 6)
         : searchResults.products
 
-      const catalogForAI = productsForCards.slice(0, 8).map((p) => ({
+      const fullCatalogForAI = allProducts.slice(0, 10).map((p) => ({
         slug: p.slug,
         name: p.name,
         price: p.price,
@@ -241,7 +249,7 @@ What would you like help with?`,
               { role: 'user', content: userMessage },
             ],
             useHuggingFace: true,
-            catalog: catalogForAI,
+            catalog: fullCatalogForAI,
           }),
         })
 
