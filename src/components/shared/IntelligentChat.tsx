@@ -101,6 +101,8 @@ What would you like help with?`,
       // Tokenize query for more forgiving matching (and avoid matching everything)
       const stopwords = new Set([
         'a','an','the','and','or','to','for','of','in','on','at','with','me','my','your','you','i','we','us',
+        'how','are','what','when','where','why','who','can','could','would','should','will','wont','dont','does','did',
+        'ok','okay','yeah','yep','nope','yes','no','hi','hello','hey','thanks','thank','sorry',
         'show','find','search','looking','want','need','please','help','some','any','give','tell',
       ])
       const rawTokens = lower
