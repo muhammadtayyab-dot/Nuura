@@ -318,23 +318,44 @@ What would you like help with?`,
   }
 
   const renderMessageContent = (text: string, isUser: boolean) => {
-    const parts = String(text ?? '').split(/(\/product\/[a-z0-9-]+)/gi)
-    return parts.map((part, idx) => {
-      const isProductPath = /^\/product\/[a-z0-9-]+$/i.test(part)
-      if (!isProductPath) return <span key={idx}>{part}</span>
-      return (
-        <Link
-          key={idx}
-          href={part}
-          style={{
-            color: isUser ? '#F5F0E6' : '#1B2E1F',
-            textDecoration: 'underline',
-            fontWeight: 600,
-          }}
-        >
-          {part}
-        </Link>
-      )
+    const raw = String(text ?? '')
+    const linkPattern =
+      /(https?:\/\/[^\s)]+\/product\/[a-z0-9-]+|nuura-temp\.vercel\.app\/product\/[a-z0-9-]+|\/product\/[a-z0-9-]+)/gi
+    const chunks = raw.split(linkPattern)
+
+    const renderBold = (segment: string, keyPrefix: string) => {
+      const parts = segment.split(/(\*\*[^*]+\*\*)/g)
+      return parts.map((p, i) => {
+        const isBold = p.startsWith('**') && p.endsWith('**') && p.length > 4
+        const content = isBold ? p.slice(2, -2) : p
+        return isBold ? <strong key={`${keyPrefix}-b-${i}`}>{content}</strong> : <span key={`${keyPrefix}-t-${i}`}>{content}</span>
+      })
+    }
+
+    const toProductPath = (match: string) => {
+      const m = match.match(/\/product\/([a-z0-9-]+)/i)
+      return m ? `/product/${m[1]}` : null
+    }
+
+    return chunks.map((chunk, idx) => {
+      const productPath = toProductPath(chunk)
+      if (productPath) {
+        return (
+          <Link
+            key={`l-${idx}`}
+            href={productPath}
+            style={{
+              color: isUser ? '#F5F0E6' : '#1B2E1F',
+              textDecoration: 'underline',
+              fontWeight: 600,
+            }}
+          >
+            {productPath}
+          </Link>
+        )
+      }
+
+      return <span key={`c-${idx}`}>{renderBold(chunk, `c-${idx}`)}</span>
     })
   }
 
