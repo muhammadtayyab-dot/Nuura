@@ -137,4 +137,27 @@ export const MOCK_PRODUCTS = [
     createdAt: new Date('2025-01-12'),
     updatedAt: new Date('2025-01-12'),
   },
+  {
+    _id: '7',
+    slug: 'night-cream',
+    name: 'Night Cream',
+    tagline: 'Restore. Nourish. Rejuvenate.',
+    description:
+      'Rich, luxurious night cream with hyaluronic acid and peptides. Deeply moisturizes while you sleep. Wake up to plump, glowing skin.',
+    price: 2200,
+    comparePrice: 3000,
+    images: [
+      'https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=800&q=85',
+      'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=800&q=85',
+    ],
+    category: 'self-care',
+    tags: ['cream', 'night', 'moisturizer', 'skincare', 'hydration'],
+    inStock: true,
+    stockCount: 40,
+    isFeatured: false,
+    isNewDrop: true,
+    isBestSeller: false,
+    createdAt: new Date('2025-01-20'),
+    updatedAt: new Date('2025-01-20'),
+  },
 ]

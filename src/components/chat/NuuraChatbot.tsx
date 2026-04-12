@@ -56,6 +56,13 @@ const PRODUCTS = [
     description: 'Nano ionic steamer for deep pore cleansing.',
     inStock: true, isNew: false, isBestSeller: false,
   },
+  {
+    id: '7', slug: 'night-cream', name: 'Night Cream',
+    tagline: 'Restore. Nourish. Rejuvenate.', price: 2200, comparePrice: 3000,
+    category: 'self-care', tags: ['cream', 'night', 'moisturizer', 'skincare', 'hydration', 'sleep'],
+    description: 'Rich night cream with hyaluronic acid and peptides for deep hydration.',
+    inStock: true, isNew: true, isBestSeller: false,
+  },
 ]
 
 // ── Mock orders ───────────────────────────────────────────────────
@@ -443,7 +450,9 @@ function OrderTracker({ order }: { order: typeof MOCK_ORDERS[string] & { number:
 }
 
 // ── Main chatbot component ────────────────────────────────────────
-export function NuuraChatbot() {
+// DEPRECATED: Use CustomChat from @/components/shared/CustomChat instead
+// This component is disabled to prevent duplicate chat button
+export function NuuraChatbot_DISABLED() {
   const [open, setOpen] = useState(false)
   const [msgs, setMsgs] = useState<Msg[]>([])
   const [input, setInput] = useState('')

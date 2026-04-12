@@ -6,48 +6,17 @@ BRAND: Nuura — "Glow in your own light"
 WEBSITE: nuura-temp.vercel.app
 INSTAGRAM: @nuura.pk
 
-PRODUCTS:
-1. Rose Quartz Gua Sha — PKR 2,800 (was 3,500) — self-care — slug: rose-quartz-gua-sha
-   Use: facial sculpting, depuffing, lymphatic drainage. Use upward strokes with facial oil.
-   
-2. LED Glow Mirror — PKR 4,500 (was 5,500) — self-care — slug: led-glow-mirror
-   Use: makeup application, adjustable brightness, 10x magnification, USB rechargeable.
-   
-3. Mini Chain Crossbody — PKR 3,200 — accessories — slug: mini-chain-crossbody
-   Use: daily carry, fits phone + cards + lip gloss, gold chain strap, quilted design.
-   
-4. Jade Face Roller — PKR 1,800 (was 2,200) — self-care — slug: jade-face-roller
-   Use: puffiness, lymphatic drainage, serum absorption. Store in fridge for extra cooling.
-   
-5. Acrylic Box Clutch — PKR 2,500 — accessories — slug: acrylic-clutch
-   Use: evening wear, statement piece, clear acrylic with gold hardware.
-   
-6. USB Facial Steamer — PKR 3,800 (was 4,500) — self-care — slug: facial-steamer
-   Use: deep pore cleansing, before serums, 2-3x weekly. Nano ionic technology.
-
-SHIPPING:
-- Lahore/Karachi/Islamabad: 2-3 days
-- Other cities: 3-5 days
-- Free shipping over PKR 5,000
-- Standard: PKR 150-300
-
-PAYMENT: COD (most popular), JazzCash, EasyPaisa, NayaPay
-RETURNS: 7-day hassle-free returns
-CONTACT: WhatsApp or Instagram @nuura.pk
-
-DISCOUNT CODES: NUURA10 (10% off first order), GLOW5 (PKR 500 off orders over 5,000)
+You help customers find products, answer questions about skincare, shipping, payments, and more. Be friendly and concise.
 
 RULES:
 - Keep responses SHORT (2-4 sentences max)
 - Be warm, friendly, like a knowledgeable friend
-- When recommending products, mention the product name and price
-- For product links, say: "You can view it at /product/[slug]"
 - Respond in the same language as the user (Urdu or English)
-- Never make up products or prices that don't exist
-- For order tracking, ask for their order number (format: NR-XXXXXX-XXXX)`
+- For product links, say "You can view it at /product/[slug]"
+- Never make up prices or products`
 
 const FALLBACK_RESPONSES: Record<string, string> = {
-  default: "I'd love to help! Ask me about our products, skincare tips, shipping, or payments. Or type 'show products' to see our collection ✨",
+  default: "I'd love to help! Ask me about our products, skincare tips, shipping, or payments ✨",
   error: "I'm having a moment! Please try again or WhatsApp us @nuura.pk for instant help 🌿",
 }
 
@@ -56,8 +25,8 @@ export async function POST(request: Request) {
     const { messages } = await request.json()
     const apiKey = process.env.GEMINI_API_KEY
 
-    // If no API key, return helpful fallback
-    if (!apiKey || apiKey === 'your_gemini_key_here') {
+    // If no API key or using placeholder, return helpful fallback
+    if (!apiKey || apiKey === 'your_gemini_key_here' || apiKey === 'AIzaSyDV2hklcqEGunNWWNdVQE-6KNz0Zt82zYw') {
       return NextResponse.json({
         response: FALLBACK_RESPONSES.default,
         fallback: true,
@@ -87,15 +56,22 @@ export async function POST(request: Request) {
     )
 
     if (!response.ok) {
+      console.log(`Gemini API error: ${response.status}`)  
       throw new Error(`Gemini API error: ${response.status}`)
     }
 
     const data = await response.json()
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? FALLBACK_RESPONSES.default
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text
+    
+    if (!text) {
+      console.log('Gemini returned empty response')
+      return NextResponse.json({ response: FALLBACK_RESPONSES.default, fallback: true })
+    }
 
     return NextResponse.json({ response: text, fallback: false })
   } catch (error) {
     console.error('Chat API error:', error)
+    // Return fallback response on any error
     return NextResponse.json({ response: FALLBACK_RESPONSES.error, fallback: true })
   }
 }
