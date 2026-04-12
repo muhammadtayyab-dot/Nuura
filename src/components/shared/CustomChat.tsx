@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Sparkles, X, Send } from 'lucide-react'
 import { useCartStore } from '@/store/cartStore'
+import { useRouter } from 'next/navigation'
 
 interface Message {
   id: string
@@ -18,10 +19,18 @@ export default function CustomChat() {
   const [messages, setMessages] = useState<Message[]>([{
     id: 'sys-welcome',
     role: 'ai',
-    content: "Hi! I'm Nuura's Custom AI Agent ??\nI can track your order, recommend products, answer FAQs, and even add items to your cart!"
+    content: "Hi! I'm Nuura's shopping assistant.\nI can track your order, recommend products, answer FAQs, and manage your cart."
   }])
   const [inputValue, setInputValue] = useState('')
+  const [suggestions, setSuggestions] = useState<string[]>([
+    'Show best sellers',
+    'Self-care under 3000',
+    'Track my order',
+    'Open cart',
+  ])
+  const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const router = useRouter()
   
   // Real Cart Integration
   const cartStore = useCartStore()
@@ -42,13 +51,38 @@ export default function CustomChat() {
          setMessages(prev => [...prev, {
            id: Date.now().toString() + 'remind',
            role: 'ai',
-           content: "Don't forget! You have items waiting in your cart. Ask me to open checkout when you're ready ??"
+           content: "Reminder: you have items waiting in your cart. Say 'Go to checkout' when you're ready."
          }])
       }, 30000) // Remind after 30 seconds
     }
     return () => clearTimeout(timeout)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cartStore.items.length])
+
+  // Autocomplete / smart suggestions
+  useEffect(() => {
+    const q = inputValue.trim()
+    if (q.length < 2) return
+
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch('/api/custom-chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: q, suggestOnly: true }),
+        })
+        if (!res.ok) return
+        const data = await res.json()
+        if (Array.isArray(data.suggestions) && data.suggestions.length > 0) {
+          setSuggestions(data.suggestions)
+        }
+      } catch {
+        // ignore suggestion failures
+      }
+    }, 250)
+
+    return () => clearTimeout(timer)
+  }, [inputValue])
 
   const handleSend = async (e?: React.FormEvent) => {
     e?.preventDefault()
@@ -78,19 +112,82 @@ export default function CustomChat() {
 
       setMessages(prev => [...prev, { id: Date.now().toString(), role: 'ai', content: data.response }])
 
+      if (Array.isArray(data.suggestions) && data.suggestions.length > 0) {
+        setSuggestions(data.suggestions)
+      }
+
       // Cart Action Handlers
       if (data.action) {
         setTimeout(() => {
            if (data.action.type === 'ADD_TO_CART' && data.action.product) {
-              cartStore.addItem(data.action.product)
-              cartStore.openCart()
-              setMessages(prev => [...prev, { 
-                id: Date.now().toString() + '-sys', 
-                role: 'system', 
-                content: `??? Added ${data.action.product.name} to cart!` 
-              }])
-           } else if (data.action.type === 'OPEN_CART') {
-              cartStore.openCart()
+             const p = { ...data.action.product, _id: String(data.action.product._id) }
+             cartStore.addItem(p)
+             cartStore.openCart()
+             setMessages(prev => [...prev, {
+               id: Date.now().toString() + '-sys',
+               role: 'system',
+               content: `Added ${p.name} to cart.`
+             }])
+             return
+           }
+
+           if (data.action.type === 'REMOVE_FROM_CART') {
+             const productId = data.action.productId
+             const query = (data.action.query || '').toLowerCase()
+             let removedName: string | null = null
+
+             if (productId) {
+               const item = cartStore.items.find(i => i.product._id === productId)
+               removedName = item?.product?.name || null
+               cartStore.removeItem(productId)
+             } else if (query) {
+               const item = cartStore.items.find(i =>
+                 i.product.name.toLowerCase().includes(query) ||
+                 i.product.slug.toLowerCase().includes(query)
+               )
+               if (item) {
+                 removedName = item.product.name
+                 cartStore.removeItem(item.product._id)
+               }
+             }
+
+             setMessages(prev => [...prev, {
+               id: Date.now().toString() + '-sys',
+               role: 'system',
+               content: removedName ? `Removed ${removedName} from cart.` : 'No matching item found in cart.'
+             }])
+             return
+           }
+
+           if (data.action.type === 'CLEAR_CART') {
+             cartStore.clearCart()
+             setMessages(prev => [...prev, {
+               id: Date.now().toString() + '-sys',
+               role: 'system',
+               content: 'Cart cleared.'
+             }])
+             return
+           }
+
+           if (data.action.type === 'OPEN_CART') {
+             cartStore.openCart()
+             return
+           }
+
+           if (data.action.type === 'GO_TO_CHECKOUT') {
+             cartStore.openCart()
+             router.push('/checkout')
+             return
+           }
+
+           if (data.action.type === 'APPLY_COUPON' && data.action.code) {
+             setAppliedCoupon(String(data.action.code).toUpperCase())
+             setMessages(prev => [...prev, {
+               id: Date.now().toString() + '-sys',
+               role: 'system',
+               content: `Coupon applied: ${String(data.action.code).toUpperCase()}`
+             }])
+             return
            }
         }, 1000)
       }
@@ -99,12 +196,14 @@ export default function CustomChat() {
       setMessages(prev => prev.filter(m => m.id !== typingId))
       setMessages(prev => [...prev, {
         id: Date.now().toString(), role: 'system',
-        content: 'System timeout. Please try again later.'
+        content: 'Something went wrong. Please try again.'
       }])
     }
   }
 
-  const QUICK_REPLIES = ["Where is my order?", "Recommend a product", "Shipping FAQ", "Add a Gua Sha"]
+  const QUICK_REPLIES = suggestions.length > 0
+    ? suggestions
+    : ["Where is my order?", "Recommend a product", "Shipping info", "Add a Gua Sha"]
 
   return (
     <div style={{ position: 'fixed', bottom: '2rem', right: '2rem', zIndex: 9999 }}>
@@ -199,6 +298,21 @@ export default function CustomChat() {
                   </button>
                 ))}
               </div>
+
+              {appliedCoupon && (
+                <div style={{
+                  margin: '0 0 0.75rem',
+                  padding: '0.5rem 0.75rem',
+                  borderRadius: '12px',
+                  border: '1px solid rgba(96,165,250,0.25)',
+                  backgroundColor: 'rgba(96,165,250,0.08)',
+                  fontFamily: 'var(--font-sans)',
+                  fontSize: '12px',
+                  color: '#1E3A8A'
+                }}>
+                  Applied coupon: {appliedCoupon}
+                </div>
+              )}
 
               <form onSubmit={handleSend} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                 <input

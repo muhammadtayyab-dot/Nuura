@@ -19,9 +19,14 @@ export async function GET(request: Request) {
     if (featured) query = query.where('isFeatured').equals(true)
     if (newDrop) query = query.where('isNewDrop').equals(true)
     const products = await query.limit(limit).lean()
-    return NextResponse.json({ products })
+    
+    // If DB returns data, use it; otherwise fall back to mock
+    if (products && products.length > 0) {
+      return NextResponse.json({ products })
+    }
+    throw new Error('No products in database, using mock data')
   } catch {
-    // DB not connected — return mock data
+    // DB not connected or no products — return mock data
     let filtered = MOCK_DATA as typeof MOCK_DATA
     if (category) filtered = filtered.filter((p) => p.category === category)
     if (featured) filtered = filtered.filter((p) => p.isFeatured)

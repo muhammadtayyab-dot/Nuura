@@ -19,6 +19,7 @@ export async function GET(_request: Request, { params }: RouteParams) {
     }
     throw new Error('not found in db')
   } catch {
+    // Try mock data
     const product = MOCK_DATA.find((p) => p.slug === slug)
     if (!product) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 })

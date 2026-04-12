@@ -1,6 +1,6 @@
 ﻿'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Product } from '@/types'
 import FilterBar from '@/components/shop/FilterBar'
@@ -11,13 +11,38 @@ interface ShopClientProps {
 }
 
 export default function ShopClient({ initialProducts }: ShopClientProps) {
+  const [products, setProducts] = useState<Product[]>(initialProducts)
+  const [loading, setLoading] = useState(true)
   const [activeCategory, setActiveCategory] = useState('')
   const [activeSort, setActiveSort] = useState('featured')
 
+  // Fetch products from API on mount
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await fetch('/api/products')
+        if (!response.ok) throw new Error('Failed to fetch')
+        const data = await response.json()
+        if (data.products && data.products.length > 0) {
+          setProducts(data.products)
+        } else {
+          setProducts(initialProducts)
+        }
+      } catch (error) {
+        console.error('Error fetching products:', error)
+        setProducts(initialProducts)
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    fetchProducts()
+  }, [initialProducts])
+
   const filtered = useMemo(() => {
     const list = activeCategory
-      ? initialProducts.filter((p) => p.category === activeCategory)
-      : [...initialProducts]
+      ? products.filter((p) => p.category === activeCategory)
+      : [...products]
 
     if (activeSort === 'price-asc') list.sort((a, b) => a.price - b.price)
     else if (activeSort === 'price-desc') list.sort((a, b) => b.price - a.price)
@@ -25,7 +50,7 @@ export default function ShopClient({ initialProducts }: ShopClientProps) {
     else list.sort((a, b) => Number(b.isFeatured) - Number(a.isFeatured))
 
     return list
-  }, [initialProducts, activeCategory, activeSort])
+  }, [products, activeCategory, activeSort])
 
   return (
     <>
@@ -38,7 +63,11 @@ export default function ShopClient({ initialProducts }: ShopClientProps) {
 
       <section style={{ backgroundColor: '#1B2E1F', minHeight: '100vh' }}>
         <div style={{ padding: '4rem clamp(1.5rem, 6vw, 5rem)' }}>
-          {filtered.length === 0 ? (
+          {loading ? (
+            <p style={{ fontFamily: 'var(--font-sans)', fontSize: '13px', color: 'rgba(245,240,230,0.6)', textAlign: 'center', padding: '6rem 0' }}>
+              Loading products...
+            </p>
+          ) : filtered.length === 0 ? (
             <p style={{ fontFamily: 'var(--font-sans)', fontSize: '13px', color: 'rgba(245,240,230,0.6)', textAlign: 'center', padding: '6rem 0' }}>
               No products found.
             </p>

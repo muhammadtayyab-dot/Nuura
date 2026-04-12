@@ -1,7 +1,7 @@
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import CartDrawer from '@/components/shop/CartDrawer'
-import { NuuraChatbot } from '@/components/chat/NuuraChatbot'
+// import { NuuraChatbot } from '@/components/chat/NuuraChatbot'
 import { PageTransition } from '@/components/shared/PageTransition'
 
 export default function ShopLayout({
@@ -13,7 +13,7 @@ export default function ShopLayout({
     <>
       <Navbar />
       <CartDrawer />
-      <NuuraChatbot />
+      {/* <NuuraChatbot /> */}
       <PageTransition>
         <main>{children}</main>
       </PageTransition>

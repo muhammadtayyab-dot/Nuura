@@ -5,6 +5,8 @@ import { motion, useScroll, useTransform, useMotionValueEvent, AnimatePresence }
 import Link from 'next/link'
 import Image from 'next/image'
 import { ChevronLeft, ChevronRight, Star, Quote } from 'lucide-react'
+import { MOCK_PRODUCTS } from '@/lib/mockData'
+import { formatPKR } from '@/lib/utils'
 
 const C = {
   forest: '#1B2E1F', cream: '#F5F0E6', gold: '#D4A853',
@@ -12,20 +14,27 @@ const C = {
   ink: '#0F1A11', muted: '#6B7B6E', border: '#DDD8CF',
 }
 
-const PRODUCTS = [
-  { id:'1', name:'Rose Quartz Gua Sha', tagline:'Sculpt. Depuff. Glow.', price:'PKR 2,800', comparePrice:'PKR 3,500', category:'Self-Care', slug:'rose-quartz-gua-sha', isNew:true, bg:'#F5EFEC',
-    img:'https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?w=800&q=85' },
-  { id:'2', name:'LED Glow Mirror', tagline:'Studio lighting, anywhere.', price:'PKR 4,500', comparePrice:'PKR 5,500', category:'Self-Care', slug:'led-glow-mirror', isNew:false, bg:'#ECF0F5',
-    img:'https://images.unsplash.com/photo-1583241800698-e8ab01830a22?w=800&q=85' },
-  { id:'3', name:'Mini Chain Crossbody', tagline:'Small bag. Big statement.', price:'PKR 3,200', comparePrice:null, category:'Accessories', slug:'mini-chain-crossbody', isNew:true, bg:'#F0EBE4',
-    img:'https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=800&q=85' },
-  { id:'4', name:'Jade Face Roller', tagline:'Roll away the stress.', price:'PKR 1,800', comparePrice:'PKR 2,200', category:'Self-Care', slug:'jade-face-roller', isNew:false, bg:'#ECF5EE',
-    img:'https://images.unsplash.com/photo-1515377905703-c4788e51af15?w=800&q=85' },
-  { id:'5', name:'Acrylic Box Clutch', tagline:'Art you carry.', price:'PKR 2,500', comparePrice:null, category:'Accessories', slug:'acrylic-clutch', isNew:true, bg:'#F0ECF5',
-    img:'https://images.unsplash.com/photo-1566150905458-1bf1fc113f0d?w=800&q=85' },
-  { id:'6', name:'USB Facial Steamer', tagline:'Open up. Breathe in. Glow.', price:'PKR 3,800', comparePrice:'PKR 4,500', category:'Self-Care', slug:'facial-steamer', isNew:false, bg:'#ECF5F5',
-    img:'https://images.unsplash.com/photo-1556228453-efd6c1ff04f6?w=800&q=85' },
-]
+const BG_BY_SLUG: Record<string, string> = {
+  'rose-quartz-gua-sha': '#F5EFEC',
+  'led-glow-mirror': '#ECF0F5',
+  'mini-chain-crossbody': '#F0EBE4',
+  'jade-face-roller': '#ECF5EE',
+  'acrylic-clutch': '#F0ECF5',
+  'facial-steamer': '#ECF5F5',
+}
+
+const PRODUCTS = MOCK_PRODUCTS.map((p) => ({
+  id: String(p._id),
+  name: p.name,
+  tagline: p.tagline,
+  price: formatPKR(p.price),
+  comparePrice: typeof p.comparePrice === 'number' ? formatPKR(p.comparePrice) : null,
+  category: p.category === 'self-care' ? 'Self-Care' : 'Accessories',
+  slug: p.slug,
+  isNew: Boolean(p.isNewDrop),
+  bg: BG_BY_SLUG[p.slug] ?? '#F0EBE3',
+  img: p.images?.[0] || '/placeholder.jpg',
+}))
 
 const REVIEWS = [
   { name:'Aisha K.', city:'Lahore', rating:5, text:'The gua sha changed my entire morning routine. My skin looks lifted and I get compliments every day. Worth every rupee and more.', product:'Rose Quartz Gua Sha', initials:'AK' },
@@ -236,7 +245,7 @@ function DesktopProducts() {
               <div key={pageIndex} style={{ display:'grid', gridTemplateColumns:`repeat(${itemsPerView}, 1fr)`, gap:'2rem', width:`${100 / totalPages}%`, flexShrink:0 }}>
                 {page.map((p, i) => (
                   <div key={p.id} style={{ minWidth:0 }}>
-                    <PCard p={p} i={p.id as unknown as number} />
+                    <PCard p={p} i={pageIndex * itemsPerView + i} />
                   </div>
                 ))}
               </div>
