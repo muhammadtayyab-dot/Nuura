@@ -104,11 +104,13 @@ What would you like help with?`,
         'how','are','what','when','where','why','who','can','could','would','should','will','wont','dont','does','did',
         'ok','okay','yeah','yep','nope','yes','no','hi','hello','hey','thanks','thank','sorry',
         'show','find','search','looking','want','need','please','help','some','any','give','tell',
+        'under','over','above','below','between','minimum','maximum','price','prices','pkr','rs','rupees','category',
+        'self','care','skincare','beauty','accessory','accessories','new','latest','popular','trending','best','seller','bestseller','all','everything',
       ])
       const rawTokens = lower
         .split(/[^a-z0-9]+/)
         .map((t) => t.trim())
-        .filter((t) => t.length >= 3 && !stopwords.has(t))
+        .filter((t) => t.length >= 3 && !stopwords.has(t) && !/^\d+$/.test(t))
 
       // Treat the literal word "product(s)" as intent, not a search token.
       const tokens = rawTokens.filter((t) => t !== 'product' && t !== 'products')
@@ -137,6 +139,8 @@ What would you like help with?`,
         categoryFilter = 'accessories'
       }
 
+      const hasActiveFilters = minPrice > 0 || maxPrice < Infinity || !!categoryFilter
+
       // If the user is explicitly asking to browse products, show the catalog.
       // (Do not treat unrelated short messages as product searches.)
       const isBrowseQuery = /^\s*products?\s*$/.test(lower) || (/\bproducts?\b/.test(lower) && tokens.length === 0)
@@ -155,7 +159,7 @@ What would you like help with?`,
       let results = allProducts.filter((p) => {
         const haystack = `${p.name} ${p.tagline} ${p.description} ${p.tags.join(' ')}`.toLowerCase()
         const matchesText =
-          (tokens.length > 0 && tokens.some((t) => haystack.includes(t))) ||
+          (tokens.length === 0 ? hasActiveFilters : tokens.some((t) => haystack.includes(t))) ||
           p.name.toLowerCase().includes(lower) ||
           p.slug.toLowerCase().includes(lower)
 
