@@ -389,21 +389,21 @@ What would you like help with?`,
       }
 
       // ===== GENERAL GREETINGS =====
-      if (lower === 'hello' || lower === 'hi' || lower === 'hey' || lower.includes('hello')) {
+      if (lower.trim() === 'hello' || lower.trim() === 'hi' || lower.trim() === 'hey' || lower.includes('hello')) {
         return {
           id: Date.now().toString(),
           role: 'ai',
           content: `Hey there! 👋 Welcome to Nuura!\n\nLooking for something? I can help with:\n• Product search & discovery\n• Skincare routines & advice\n• Order tracking\n• Shipping, returns & payments\n\nWhat interests you?`,
         }
       }
-      if (lower === 'how are you' || lower === 'howa' || lower.includes('how are you')) {
+      if (lower.trim() === 'how are you' || lower.includes('how are you')) {
         return {
           id: Date.now().toString(),
           role: 'ai',
           content: `I'm great, thanks for asking! ✨ Even better now that I can help you find your perfect Nuura product!\n\nWhat brings you here today?`,
         }
       }
-      if (lower === 'help' || lower.includes('help me')) {
+      if (lower.trim() === 'help' || lower.includes('help me') || lower.includes('can you help')) {
         return {
           id: Date.now().toString(),
           role: 'ai',
