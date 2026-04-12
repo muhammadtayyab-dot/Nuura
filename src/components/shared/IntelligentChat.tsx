@@ -286,10 +286,24 @@ What would you like help with?`,
       const browseIntent =
         /\b(products?|shop|browse|show|under|over|between|price|pkr|rs|rupees|cheapest|budget)\b/i.test(lower)
 
-      const adviceIntent =
-        /(skincare|skin\s*type|routine|puffiness|puffy|depuff|swollen|swelling|acne|pimple|pimples|breakout|dry|dryness|dehydrated|flaky|glow|dull|dullness|dark\s*circles|under\s*eye|undereye)/i.test(
-          lower
-        )
+      const keywordStop = new Set([
+        'a','an','the','and','or','to','for','of','in','on','at','with','me','my','your','you','i','we','us',
+        'how','are','what','when','where','why','who','can','could','would','should','will','wont','dont','does','did',
+        'ok','okay','yeah','yep','nope','yes','no','hi','hello','hey','thanks','thank','sorry',
+        'show','find','search','looking','want','need','please','help','some','any','give','tell',
+        'product','products','shop','browse','buy','price','prices','pkr','rs','rupees',
+        'skincare','skin','routine','advice','tips','tip',
+      ])
+
+      const contentKeywords = lower
+        .split(/[^a-z0-9]+/)
+        .map((t) => t.trim())
+        .filter((t) => t.length >= 3 && !keywordStop.has(t) && !/^\d+$/.test(t))
+
+      // If the user asks for generic skincare advice (no concrete product-type keyword), we can show one staple.
+      // If they ask for a specific thing we don't carry (e.g. "sunscreen"), avoid forcing an unrelated tile.
+      const genericSkincareAsk =
+        /(skincare|skin\s*care|routine|skin\s*type)/i.test(lower) && contentKeywords.length === 0
 
       let productsForCards: Product[] = []
 
@@ -299,7 +313,7 @@ What would you like help with?`,
         productsForCards = searchResults.products.slice(0, 6)
       } else {
         const best = pickMostRelevantProduct(userMessage)
-        const minScore = adviceIntent ? 3 : 10
+        const minScore = genericSkincareAsk ? 2 : 10
         if (best.product && best.score >= minScore) {
           productsForCards = [best.product]
         }
