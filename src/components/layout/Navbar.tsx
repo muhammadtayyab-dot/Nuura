@@ -70,7 +70,7 @@ export default function Navbar() {
             <button className="hidden md:block" key="search" style={{ padding: '0.5rem', color: textColor, background: 'transparent', border: 0, transition: 'color 300ms' }} data-cursor="hover" aria-label="Search" onMouseEnter={e => { e.currentTarget.style.color = '#D4A853' }} onMouseLeave={e => { e.currentTarget.style.color = textColor }}><Search size={18} strokeWidth={1} /></button>,
             <button key="cart" onClick={openCart} style={{ position: 'relative', padding: '0.5rem', color: textColor, background: 'transparent', border: 0, transition: 'color 300ms', marginRight: '-0.5rem' }} data-cursor="hover" aria-label="Cart" onMouseEnter={e => { e.currentTarget.style.color = '#D4A853' }} onMouseLeave={e => { e.currentTarget.style.color = textColor }}>
               <ShoppingBag size={18} strokeWidth={1} />
-              <AnimatePresence>
+              <AnimatePresence mode="sync">
                 {totalItems > 0 && (
                   <motion.span key="badge" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                     style={{ position: 'absolute', top: '-2px', right: '-2px', width: '18px', height: '18px', borderRadius: '50%', backgroundColor: '#D4A853', color: '#1B2E1F', fontSize: '10px', fontFamily: 'var(--font-sans)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600 }}>
@@ -83,7 +83,7 @@ export default function Navbar() {
         </div>
       </motion.header>
 
-      <AnimatePresence>
+      <AnimatePresence mode="sync">
         {menuOpen && (
           <motion.div initial={{ x: '100%' }} animate={{ x: '0%' }} exit={{ x: '100%' }} transition={{ duration: 0.55, ease: [0.76, 0, 0.24, 1] }}
             style={{ position: 'fixed', inset: 0, zIndex: 60, background: '#1B2E1F', display: 'flex', flexDirection: 'column', padding: '2rem clamp(1.5rem,6vw,5rem)' }}>
