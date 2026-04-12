@@ -14,7 +14,7 @@ const NUURA_SYSTEM_PROMPT = `You are Noor, Nuura's intelligent AI beauty assista
 
 IMPORTANT CONTEXT:
 - Brand: Nuura ("Glow in your own light")
-- Products available: Night Cream (PKR 2200), Rose Quartz Gua Sha, LED Glow Mirror, Mini Chain Crossbody, Silk Pillowcase, Luxury Gift Set, Minimalist Clutch
+- Products: Only use products explicitly provided in the NUURA CATALOG context (names/prices/slugs/stock).
 - Location: Pakistan
 - Languages: English & Urdu
 - Website: nuura-temp.vercel.app
@@ -33,10 +33,11 @@ RULES:
 1. Keep responses SHORT and friendly (2-4 sentences max)
 2. Be conversational, like a knowledgeable friend
 3. When you reference a Nuura product, include price in PKR and a link in the form "/product/<slug>"
-4. Only recommend products that appear in the provided catalog context (if any)
+4. Only recommend products that appear in the provided catalog context
 5. Respond in the same language as the user (English or Urdu)
 6. Never invent product names, prices, stock status, or policies
 7. If you don't know something specific, admit it honestly
+8. If the NUURA CATALOG is not provided or is empty, do NOT name any Nuura products or prices — ask the user to browse /shop or tell you what they want.
 
 EXAMPLE RESPONSES:
 User: "What's a good skincare routine?"
@@ -51,7 +52,9 @@ Response: "I'm a beauty expert, not a coding pro! 😄 But I can definitely help
 Now respond to the user's question as Noor!`
 
 function formatCatalog(catalog: CatalogItem[] | undefined) {
-  if (!catalog || catalog.length === 0) return ''
+  if (!catalog || catalog.length === 0) {
+    return `\n\nNUURA CATALOG: (not provided)`
+  }
 
   const lines = catalog.slice(0, 10).map((p) => {
     const stock = typeof p.inStock === 'boolean' ? (p.inStock ? 'in stock' : 'out of stock') : 'stock unknown'
@@ -78,80 +81,119 @@ export async function POST(request: Request) {
       })
     }
 
-    // Format messages for Hugging Face
-    const formattedMessages = [...messages].slice(-6)
-    const conversationText = formattedMessages
-      .map((m: any) => `${m.role === 'user' ? 'User' : 'Noor'}: ${m.content}`)
-      .join('\n\n')
-
+    const formattedMessages = Array.isArray(messages) ? [...messages].slice(-8) : []
     const catalogText = formatCatalog(Array.isArray(catalog) ? (catalog as CatalogItem[]) : undefined)
 
-    const prompt = `${NUURA_SYSTEM_PROMPT}${catalogText}\n\nConversation:\n${conversationText}\n\nNoor:`
+    // Hugging Face Inference Router provides an OpenAI-compatible chat endpoint.
+    // Docs: https://huggingface.co/docs/inference-providers/index
+    const primaryModel = process.env.HF_CHAT_MODEL || process.env.HUGGINGFACE_CHAT_MODEL
+    const candidateModels = [
+      primaryModel,
+      'deepseek-ai/DeepSeek-R1:fastest',
+      'Qwen/Qwen2.5-7B-Instruct:fastest',
+      'microsoft/Phi-3.5-mini-instruct:fastest',
+    ].filter(Boolean) as string[]
 
-    console.log('Calling Hugging Face API...')
-
-    // NOTE: Hugging Face deprecated api-inference.huggingface.co; use the router endpoint.
-    // Ref: HF Inference Router (https://router.huggingface.co)
-    const model = 'google/flan-t5-large'
-    const response = await fetch(
-      `https://router.huggingface.co/hf-inference/models/${model}`,
+    const chatMessages = [
       {
-        headers: {
-          Authorization: `Bearer ${hfToken}`,
-          'Content-Type': 'application/json',
-        },
-        method: 'POST',
-        body: JSON.stringify({
-          inputs: prompt,
-          parameters: {
-            // keep parameters conservative for reliability
-            max_length: 220,
-            do_sample: false,
-          },
-        }),
-      }
-    )
+        role: 'system',
+        content: `${NUURA_SYSTEM_PROMPT}${catalogText}`,
+      },
+      ...formattedMessages.map((m: any) => ({
+        role: m?.role === 'assistant' ? 'assistant' : 'user',
+        content: String(m?.content ?? ''),
+      })),
+    ]
 
-    if (!response.ok) {
-      const errorData = await response.text()
-      console.error('HF API error status:', response.status)
-      console.error('HF API error body:', errorData)
+    console.log('Calling Hugging Face Router (chat completions)...')
 
-      // Check if it's a loading/rate-limit error
-      if (errorData.includes('currently loading')) {
-        return NextResponse.json({
-          response: "I'm waking up! Give me a second... 🌙 Please try again in a moment!",
-          loading: true,
-        })
-      }
-
-      if (response.status === 429) {
-        return NextResponse.json({
-          response: "I'm getting a lot of requests right now. Please try again in a moment 🌿",
-          rateLimited: true,
-        })
-      }
-
-      throw new Error(`HF API error: ${response.status} - ${errorData}`)
-    }
-
-    const data = await response.json()
-    console.log('HF API response:', data)
-
-    // Response can be either: [{ generated_text: "..." }] or { generated_text: "..." }
     let generatedText = ''
-    if (Array.isArray(data)) {
-      generatedText = data[0]?.generated_text || ''
-    } else if (data && typeof data === 'object') {
-      generatedText = (data as any).generated_text || ''
+    let lastError: string | undefined
+
+    for (const model of candidateModels) {
+      try {
+        const response = await fetch('https://router.huggingface.co/v1/chat/completions', {
+          headers: {
+            Authorization: `Bearer ${hfToken}`,
+            'Content-Type': 'application/json',
+          },
+          method: 'POST',
+          body: JSON.stringify({
+            model,
+            messages: chatMessages,
+            stream: false,
+            max_tokens: 220,
+            temperature: 0.7,
+          }),
+        })
+
+        if (!response.ok) {
+          const errorText = await response.text()
+          lastError = `HF Router error: ${response.status} - ${errorText}`
+
+          // These are not model-specific; return immediately.
+          if (response.status === 429) {
+            return NextResponse.json({
+              response: "I'm getting a lot of requests right now. Please try again in a moment 🌿",
+              rateLimited: true,
+            })
+          }
+
+          if (response.status === 503 || errorText.toLowerCase().includes('loading')) {
+            return NextResponse.json({
+              response: "I'm waking up! Give me a second... 🌙 Please try again in a moment!",
+              loading: true,
+            })
+          }
+
+          // Try the next model.
+          continue
+        }
+
+        const data = await response.json()
+
+        // OpenAI-compatible response: { choices: [{ message: { content: "..." } }] }
+        const content = data?.choices?.[0]?.message?.content
+        if (typeof content === 'string') {
+          generatedText = content.trim()
+        } else {
+          generatedText = ''
+        }
+
+        // Some models/providers may return a 200 with an error payload.
+        if (!generatedText && data?.error) {
+          lastError = typeof data.error === 'string' ? data.error : JSON.stringify(data.error)
+          continue
+        }
+
+        if (generatedText) break
+      } catch (e) {
+        lastError = e instanceof Error ? e.message : String(e)
+      }
     }
 
-    // Clean up the response
-    generatedText = generatedText
-      .replace(prompt, '')
-      .replace(/Noor:\s*/g, '')
-      .split('User:')[0] // Stop at next user message
-      .trim()
+    if (!generatedText && lastError) {
+      console.error('HF Router final error:', lastError)
+    }
+
+    const catalogProvided = Array.isArray(catalog) && (catalog as CatalogItem[]).length > 0
+
+    // Guardrail: if we have no catalog, do not allow any product/price/link claims.
+    if (!catalogProvided && generatedText) {
+      const keep = generatedText
+        .split(/(?<=[.!?۔])\s+/)
+        .filter((s) => {
+          const t = s.trim()
+          if (!t) return false
+          if (/\bPKR\b/i.test(t)) return false
+          if (t.includes('/product/')) return false
+          return true
+        })
+        .join(' ')
+        .trim()
+
+      generatedText = keep
+    }
 
     if (!generatedText || generatedText.length < 5) {
       generatedText = "Could you tell me a bit more (your skin type + what you're targeting)? I’ll recommend the best Nuura option."

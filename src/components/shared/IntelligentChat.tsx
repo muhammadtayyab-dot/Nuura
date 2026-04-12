@@ -317,6 +317,27 @@ What would you like help with?`,
     return null
   }
 
+  const renderMessageContent = (text: string, isUser: boolean) => {
+    const parts = String(text ?? '').split(/(\/product\/[a-z0-9-]+)/gi)
+    return parts.map((part, idx) => {
+      const isProductPath = /^\/product\/[a-z0-9-]+$/i.test(part)
+      if (!isProductPath) return <span key={idx}>{part}</span>
+      return (
+        <Link
+          key={idx}
+          href={part}
+          style={{
+            color: isUser ? '#F5F0E6' : '#1B2E1F',
+            textDecoration: 'underline',
+            fontWeight: 600,
+          }}
+        >
+          {part}
+        </Link>
+      )
+    })
+  }
+
   return (
     <>
       <style>{`
@@ -436,7 +457,7 @@ What would you like help with?`,
                     }}
                   >
                     {msg.isTyping ? '⏳ ' : ''}
-                    {msg.content}
+                    {renderMessageContent(msg.content, msg.role === 'user')}
                   </div>
                   
                   {msg.products && msg.products.length > 0 && (
