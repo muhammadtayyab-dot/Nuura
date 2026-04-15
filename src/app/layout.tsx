@@ -5,6 +5,7 @@ import QueryProvider from '@/providers/QueryProvider'
 import SmoothScrollProvider from '@/providers/SmoothScrollProvider'
 import { CustomCursor } from '@/components/shared/CustomCursor'
 import { LoadingScreen } from '@/components/shared/LoadingScreen'
+import { NoHorizontalScroll } from '@/components/shared/NoHorizontalScroll'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -33,6 +34,7 @@ export default function RootLayout({
       <body>
         <SmoothScrollProvider>
           <QueryProvider>
+            <NoHorizontalScroll />
             <LoadingScreen />
             <CustomCursor />
             {children}
