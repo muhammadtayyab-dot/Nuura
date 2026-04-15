@@ -9,6 +9,8 @@ export const metadata = {
   description: 'Browse all Nuura self-care gadgets and aesthetic accessories.',
 }
 
+export const dynamic = 'force-dynamic'
+
 export default async function ShopPage() {
   const loadProducts = async () => {
     try {
