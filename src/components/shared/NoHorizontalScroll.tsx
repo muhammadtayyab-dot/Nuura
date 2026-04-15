@@ -9,6 +9,10 @@ function clampToLeft() {
 
     if (docEl && docEl.scrollLeft !== 0) docEl.scrollLeft = 0
     if (body && body.scrollLeft !== 0) body.scrollLeft = 0
+
+    if (typeof window !== 'undefined' && window.scrollX !== 0) {
+      window.scrollTo({ left: 0, top: window.scrollY })
+    }
   } catch {
     // ignore
   }

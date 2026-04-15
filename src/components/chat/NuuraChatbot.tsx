@@ -596,7 +596,7 @@ export function NuuraChatbot() {
 
             {/* Quick replies bar */}
             {showReplies && msgs.length <= 1 && (
-              <div style={{ padding:'10px 14px', borderBottom:`1px solid ${C.border}`, display:'flex', gap:'6px', overflowX:'auto', flexShrink:0 }} className="hide-scrollbar">
+              <div style={{ padding:'10px 14px', borderBottom:`1px solid ${C.border}`, display:'flex', gap:'6px', overflowX:'auto', flexShrink:0, touchAction:'pan-x' }} className="hide-scrollbar">
                 {QUICK_REPLIES.map((qr,i) => (
                   <button key={i} onClick={()=>send(qr.msg)}
                     style={{ padding:'6px 12px', border:`1px solid ${C.border}`, background:'transparent', fontFamily:'var(--font-sans)', fontSize:'11px', color:C.muted, cursor:'pointer', borderRadius:'20px', transition:'all 200ms', whiteSpace:'nowrap' as const, flexShrink:0 }}
@@ -677,7 +677,7 @@ export function NuuraChatbot() {
             {/* Input */}
             <div style={{ padding:'0.875rem 1.25rem', borderTop:`1px solid ${C.border}`, display:'flex', flexDirection:'column', gap:'10px', flexShrink:0 }}>
               {input.trim().length >= 2 && suggestions.length > 0 && (
-                <div style={{ display:'flex', gap:'6px', overflowX:'auto' }} className="hide-scrollbar">
+                <div style={{ display:'flex', gap:'6px', overflowX:'auto', touchAction:'pan-x' }} className="hide-scrollbar">
                   {suggestions.slice(0, 6).map((s, i) => (
                     <button
                       key={`${s}-${i}`}

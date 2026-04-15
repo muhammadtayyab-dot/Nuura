@@ -32,6 +32,7 @@
 html {
   scroll-behavior: smooth;
   overflow-x: hidden;
+  overscroll-behavior-x: none;
 }
 
 body {
@@ -40,6 +41,13 @@ body {
   color: #0F1A11;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
+  overscroll-behavior-x: none;
+}
+
+/* Disable accidental horizontal viewport panning on mobile.
+   (Horizontal scroll is still allowed on specific components that opt-in.) */
+html, body {
+  touch-action: pan-y;
 }
 
 @supports (overflow: clip) {
