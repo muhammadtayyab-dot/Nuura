@@ -49,7 +49,7 @@ export default function Navbar() {
           <span style={{ fontFamily: 'var(--font-accent)', fontSize: '20px', letterSpacing: '0.45em', color: textColor, textTransform: 'uppercase', transition: 'color 350ms' }}>NUURA</span>
         </Link>
 
-        <style>{`@media (max-width: 768px) { .desktop-hide { display: none !important; } }`}</style><nav style={{ alignItems: 'center', gap: '2.5rem', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }} className="hidden md:flex desktop-hide">
+        <nav style={{ alignItems: 'center', gap: '2.5rem', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }} className="hidden md:flex">
           {NAV_LINKS.map(link => {
             const active = pathname === link.href
             return (

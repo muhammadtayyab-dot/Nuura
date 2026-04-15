@@ -449,21 +449,6 @@ What would you like help with?`,
 
   return (
     <>
-      <style>{`
-        .nuura-chat-scroll::-webkit-scrollbar {
-          width: 6px;
-        }
-        .nuura-chat-scroll::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .nuura-chat-scroll::-webkit-scrollbar-thumb {
-          background: #D4A853;
-          border-radius: 3px;
-        }
-        .nuura-chat-scroll::-webkit-scrollbar-thumb:hover {
-          background: #C49543;
-        }
-      `}</style>
       <div style={{ position: 'fixed', bottom: '2rem', right: '2rem', zIndex: 9999 }}>
       <AnimatePresence mode="sync">
         {isOpen && (
