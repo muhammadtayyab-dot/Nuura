@@ -8,18 +8,28 @@ export async function GET(request: Request) {
   const category = searchParams.get('category')
   const featured = searchParams.get('featured')
   const newDrop = searchParams.get('newDrop')
+  const sortParam = (searchParams.get('sort') ?? '').toLowerCase()
   const limitParam = parseInt(searchParams.get('limit') ?? '12', 10)
   const limit = Number.isFinite(limitParam) && limitParam > 0 ? limitParam : 12
 
   try {
     await connectDB()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let query: any = ProductModel.find({ inStock: true })
+    // Treat missing `inStock` as in-stock (older/manual inserts).
+    let query: any = ProductModel.find({ inStock: { $ne: false } })
     if (category) query = query.where('category').equals(category)
     if (featured) query = query.where('isFeatured').equals(true)
     if (newDrop) query = query.where('isNewDrop').equals(true)
+
+    const sort =
+      sortParam === 'newest'
+        ? { createdAt: -1 }
+        : sortParam === 'updated'
+          ? { updatedAt: -1 }
+          : { isBestSeller: -1, isNewDrop: -1, updatedAt: -1 }
+
     const products = await query
-      .sort({ isBestSeller: -1, isNewDrop: -1, updatedAt: -1 })
+      .sort(sort)
       .limit(limit)
       .lean()
 
@@ -39,6 +49,11 @@ export async function GET(request: Request) {
     if (featured) filtered = filtered.filter((p) => p.isFeatured)
     if (newDrop) filtered = filtered.filter((p) => p.isNewDrop)
     filtered = filtered.filter((p) => p.inStock !== false)
+    if (sortParam === 'newest') {
+      filtered = [...filtered].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    } else if (sortParam === 'updated') {
+      filtered = [...filtered].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+    }
     return NextResponse.json({ products: filtered.slice(0, limit) }, {
       headers: {
         'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',

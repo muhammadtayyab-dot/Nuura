@@ -1,13 +1,30 @@
 ﻿import { Suspense } from 'react'
 import ShopClient from '@/components/shop/ShopClient'
 import { MOCK_PRODUCTS } from '@/lib/mockData'
+import { connectDB } from '@/lib/mongodb'
+import ProductModel from '@/models/Product'
 
 export const metadata = {
   title: 'Shop — Nuura',
   description: 'Browse all Nuura self-care gadgets and aesthetic accessories.',
 }
 
-export default function ShopPage() {
+export default async function ShopPage() {
+  const loadProducts = async () => {
+    try {
+      await connectDB()
+      const products = await ProductModel.find({ inStock: { $ne: false } })
+        .sort({ isBestSeller: -1, isNewDrop: -1, updatedAt: -1 })
+        .limit(60)
+        .lean()
+      return Array.isArray(products) && products.length > 0 ? (products as any) : (MOCK_PRODUCTS as any)
+    } catch {
+      return MOCK_PRODUCTS as any
+    }
+  }
+
+  const initialProducts = await loadProducts()
+
   return (
     <div style={{ minHeight: '100vh', background: '#1B2E1F' }}>
       {/* Animated page header */}
@@ -48,7 +65,7 @@ export default function ShopPage() {
             All Products
           </h1>
           <p style={{ fontFamily: 'var(--font-sans)', fontSize: '13px', color: 'rgba(245,240,230,0.6)', marginTop: '1rem' }}>
-            (6 pieces)
+            ({Array.isArray(initialProducts) ? initialProducts.length : 0} pieces)
           </p>
         </div>
       </div>
@@ -59,7 +76,7 @@ export default function ShopPage() {
           Loading products...
         </div>
       }>
-        <ShopClient initialProducts={MOCK_PRODUCTS as any} />
+        <ShopClient initialProducts={initialProducts as any} />
       </Suspense>
     </div>
   )

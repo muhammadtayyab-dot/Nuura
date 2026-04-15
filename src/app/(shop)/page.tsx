@@ -7,6 +7,7 @@ import Image from 'next/image'
 import { ChevronLeft, ChevronRight, Star, Quote } from 'lucide-react'
 import { MOCK_PRODUCTS } from '@/lib/mockData'
 import { formatPKR } from '@/lib/utils'
+import { PRODUCT_IMAGES } from '@/lib/placeholderImages'
 
 const C = {
   forest: '#1B2E1F', cream: '#F5F0E6', gold: '#D4A853',
@@ -66,7 +67,7 @@ function toHomeProduct(p: ApiProduct): HomeProduct {
     slug,
     isNew: Boolean(p.isNewDrop),
     bg: BG_BY_SLUG[slug] ?? '#F0EBE3',
-    img: images[0] || '/placeholder.jpg',
+    img: images[0] || PRODUCT_IMAGES.hero,
   }
 }
 
@@ -354,31 +355,29 @@ function MobileProducts({ products }: { products: HomeProduct[] }) {
 
 function Products() {
   const isMobile = useIsMobile()
-  const [products, setProducts] = useState<HomeProduct[]>(FALLBACK_PRODUCTS)
+  const [products, setProducts] = useState<HomeProduct[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     let cancelled = false
 
     async function load() {
       try {
-        const tryFetch = async (url: string) => {
-          const res = await fetch(url, { cache: 'no-store' })
-          if (!res.ok) return []
-          const data = (await res.json()) as { products?: ApiProduct[] }
-          return Array.isArray(data?.products) ? data.products : []
-        }
-
-        let list = await tryFetch('/api/products?featured=true&limit=12')
-        if (list.length === 0) list = await tryFetch('/api/products?newDrop=true&limit=12')
-        if (list.length === 0) list = await tryFetch('/api/products?limit=12')
+        const t = Date.now()
+        const res = await fetch(`/api/products?sort=newest&limit=12&t=${t}`, { cache: 'no-store' })
+        if (!res.ok) throw new Error('FAILED_PRODUCTS_FETCH')
+        const data = (await res.json()) as { products?: ApiProduct[] }
+        const list = Array.isArray(data?.products) ? data.products : []
 
         const mapped = list
           .map(toHomeProduct)
           .filter((p) => Boolean(p.slug) && Boolean(p.name))
 
-        if (!cancelled && mapped.length > 0) setProducts(mapped)
+        if (!cancelled) setProducts(mapped)
       } catch {
-        // keep fallback products
+        if (!cancelled) setProducts(FALLBACK_PRODUCTS)
+      } finally {
+        if (!cancelled) setLoading(false)
       }
     }
 
@@ -387,6 +386,26 @@ function Products() {
       cancelled = true
     }
   }, [])
+
+  if (loading) {
+    return (
+      <div style={{ background:C.forest, padding:'clamp(5rem,10vw,8rem) clamp(1.5rem,6vw,5rem)' }}>
+        <div style={{ maxWidth:'1400px', margin:'0 auto', fontFamily:'var(--font-sans)', fontSize:'13px', color:'rgba(245,240,230,0.6)' }}>
+          Loading featured products...
+        </div>
+      </div>
+    )
+  }
+
+  if (products.length === 0) {
+    return (
+      <div style={{ background:C.forest, padding:'clamp(5rem,10vw,8rem) clamp(1.5rem,6vw,5rem)' }}>
+        <div style={{ maxWidth:'1400px', margin:'0 auto', fontFamily:'var(--font-sans)', fontSize:'13px', color:'rgba(245,240,230,0.6)' }}>
+          No products available right now.
+        </div>
+      </div>
+    )
+  }
 
   return isMobile ? <MobileProducts products={products} /> : <DesktopProducts products={products} />
 }
