@@ -610,8 +610,11 @@ function sanitizeAssistantText(raw: string): string {
     }
   }
 
-  // Remove ugly raw paths like: ( /product/anything )
-  t = t.replace(/\(\s*\/product\/[^)]+\)/gi, '').trim()
+  // Normalize raw parenthetical product paths so the UI doesn't show bare URLs.
+  // Keep proper markdown links like: [Product Name](/product/slug)
+  t = t.replace(/(^|[^\]])\(\s*\/product\/([a-z0-9-]+)\s*\)/gi, '$1[View product](/product/$2)').trim()
+  // Strip malformed parenthetical paths like: (/product/"Product Name")
+  t = t.replace(/(^|[^\]])\(\s*\/product\/[^)\n]+\)/gi, '$1').trim()
   t = t.replace(/\n{3,}/g, '\n\n').trim()
 
   return t
