@@ -600,7 +600,7 @@ function sanitizeAssistantText(raw: string): string {
   {
     const lines = t.split('\n')
     const metaRe =
-      /^(?:ok(?:ay)?[,\.\s-]*\s*)?(?:(?:the user|user)\s+(?:is|wants|asked|asks)\b|(?:analysis|reasoning|thoughts?|plan)\s*:|here(?:'s| is)\s+(?:my\s+)?(?:analysis|reasoning)\b|let me\s+(?:check|think)\b|first,\s)/i
+      /^(?:ok(?:ay)?[,\.\s-]*\s*)?(?:(?:the user|user)\s+(?:is|wants|asked|asks)\b|(?:analysis|reasoning|thoughts?|plan)\s*:|here(?:'s| is)\s+(?:my\s+)?(?:analysis|reasoning)\b|let me\s+(?:check|think)\b|hmm\b|looking at\b|since\s+the\s+rules\b|rules\s+say\b|first,\s)/i
 
     let metaIdx = -1
     let seenNonEmpty = 0
@@ -640,7 +640,7 @@ function sanitizeAssistantText(raw: string): string {
   if (firstIdx >= 0) {
     const firstLine = lines[firstIdx].trim()
     const looksLikeMeta =
-      /^(?:ok(?:ay)?[,\.\s-]*\s*)?(?:(?:the user|user)\s+(?:is|wants|asked|asks)\b|(?:analysis|reasoning|thoughts?)\s*:|(?:plan|approach)\s*:|let me\s+(?:check|think)\b|first,\s)/i.test(
+      /^(?:ok(?:ay)?[,\.\s-]*\s*)?(?:(?:the user|user)\s+(?:is|wants|asked|asks)\b|(?:analysis|reasoning|thoughts?)\s*:|(?:plan|approach)\s*:|let me\s+(?:check|think)\b|hmm\b|looking at\b|since\s+the\s+rules\b|rules\s+say\b|first,\s)/i.test(
         firstLine
       )
 
@@ -704,6 +704,35 @@ function sanitizeAssistantText(raw: string): string {
       out.push(l)
     }
     t = out.join('\n').trim()
+  }
+
+  // If the model outputs planning/meta chatter, salvage it into a clean answer.
+  {
+    const metaSignal =
+      /\b(live\s+product\s+catalog|rules\s+say|since\s+the\s+rules|i\s+should\b|the\s+user\s+might\b|let\s+me\s+check\s+the\s+history|they\s+have\s+already\s+seen|keep\s+it\s+short|max\s*~?\d+\s*words)\b/i
+
+    if (metaSignal.test(t)) {
+      const slug = (t.match(/\/product\/([a-z0-9-]+)/i)?.[1] ?? '').toLowerCase()
+      const priceTxt = t.match(/\bPKR\s*([0-9][0-9,]*)\b/i)?.[1]
+      const nameFromQuoted = t.match(/"([^"\n]{3,80})"/)?.[1]
+      const nameFromCatalogLine = t.match(/\b([A-Za-z][A-Za-z0-9 '&-]{2,80})\s*:\s*PKR\b/)?.[1]
+      const name = (nameFromQuoted || nameFromCatalogLine || '').trim()
+
+      const hasNew = /\bnew\s*drop\b/i.test(t)
+      const hasBest = /\bbest\s*seller\b/i.test(t)
+      const badge = hasNew && hasBest ? 'New Drop · Best Seller' : hasBest ? 'Best Seller' : hasNew ? 'New Drop' : ''
+
+      if (slug && name) {
+        t = `${name}${priceTxt ? ` — PKR ${priceTxt}` : ''}. [View product](/product/${slug})${badge ? ` (${badge})` : ''}`
+      } else {
+        // Otherwise, drop obvious meta lines.
+        const raw = t.split('\n').filter((l) => l.trim().length > 0)
+        const dropLineRe =
+          /^(?:hmm|ok(?:ay)?|looking\s+at|since\s+the\s+rules|rules\s+say|the\s+user\s+might|let\s+me\s+check|i\s+should|also,\s+noting|maybe|first,)\b/i
+        const kept = raw.filter((l) => !dropLineRe.test(l.trim()) && !metaSignal.test(l))
+        t = kept.join('\n').trim()
+      }
+    }
   }
 
   // Keep chat tidy: cap to a short list OR a few sentences.
