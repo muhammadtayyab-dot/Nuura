@@ -74,7 +74,7 @@ export default function Navbar() {
             <button key="auth" onClick={() => openAuthModal('login')} style={{ padding: '0.5rem', color: textColor, background: 'transparent', border: 0, transition: 'color 300ms', display: 'flex', alignItems: 'center', gap: '0.5rem', whiteSpace: 'nowrap' }} data-cursor="hover" aria-label="Login or sign up" onMouseEnter={e => { e.currentTarget.style.color = '#D4A853' }} onMouseLeave={e => { e.currentTarget.style.color = textColor }}>
               <LogIn size={18} strokeWidth={1} />
               <span className="hidden lg:inline" style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', letterSpacing: '0.18em', textTransform: 'uppercase' }}>
-                {session?.role === 'admin' ? 'Admin' : 'Login / Sign Up'}
+                Login / Sign Up
               </span>
             </button>,
             <button className="hidden md:block" key="search" style={{ padding: '0.5rem', color: textColor, background: 'transparent', border: 0, transition: 'color 300ms' }} data-cursor="hover" aria-label="Search" onMouseEnter={e => { e.currentTarget.style.color = '#D4A853' }} onMouseLeave={e => { e.currentTarget.style.color = textColor }}><Search size={18} strokeWidth={1} /></button>,
