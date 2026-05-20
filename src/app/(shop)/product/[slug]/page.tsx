@@ -2,6 +2,10 @@
 import { notFound } from 'next/navigation'
 import ProductImages from '@/components/product/ProductImages'
 import ProductInfo from '@/components/product/ProductInfo'
+import ProductTabs from '@/components/product/ProductTabs'
+import ReviewsSection from '@/components/product/ReviewsSection'
+import RelatedProducts from '@/components/product/RelatedProducts'
+import StickyAddToCart from '@/components/product/StickyAddToCart'
 import { Product } from '@/types'
 
 interface PageProps {
@@ -138,8 +142,18 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function ProductPage({ params }: PageProps) {
   const { slug } = await params
   const product = await getProduct(slug)
-
   if (!product) notFound()
+
+  // fetch related products (same category, exclude self)
+  let relatedProducts: Product[] = []
+  try {
+    const base = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') ?? 'http://localhost:3000'
+    const res = await fetch(`${base}/api/products?category=${product.category}&limit=8`, { next: { revalidate: 60 } })
+    if (res.ok) {
+      const data = await res.json()
+      relatedProducts = (data.products ?? []).filter((p: Product) => p.slug !== product.slug).slice(0, 4)
+    }
+  } catch {}
 
   const base = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') ?? 'http://localhost:3000'
   const productUrl = `${base}/product/${product.slug}`
@@ -169,30 +183,75 @@ export default async function ProductPage({ params }: PageProps) {
   }
 
   return (
-    <main
-      style={{
-        minHeight: '100vh',
-        background: 'radial-gradient(circle at top center, #233A27 0%, #1B2E1F 60%)',
-        paddingTop: '8rem',
-        paddingBottom: '6rem',
-      }}
-    >
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
-      />
-      <div style={{ padding: '0 clamp(1.5rem, 6vw, 5rem)' }}>
-        <div className='grid grid-cols-1 md:grid-cols-[55%_45%] gap-12 md:gap-16 items-start'>
-          <ProductImages images={product.images} name={product.name} />
-          <div style={{ position: 'sticky', top: '7rem' }}>
-            <ProductInfo product={product} />
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
+
+      <main style={{ minHeight: '100vh', backgroundColor: '#F5F0E6' }}>
+
+        {/* ── HERO SECTION — images + info ── */}
+        <div style={{ background: 'linear-gradient(180deg, #1B2E1F 0%, #233A27 60%, #F5F0E6 100%)', paddingTop: '7rem', paddingBottom: '5rem' }}>
+          <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '0 clamp(1.5rem, 5vw, 4rem)' }}>
+            {/* Breadcrumb */}
+            <nav style={{ marginBottom: '2.5rem' }}>
+              <span style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(245,240,230,0.5)' }}>
+                <a href="/shop" style={{ color: 'rgba(245,240,230,0.5)', textDecoration: 'none' }}>Shop</a>
+                {' / '}
+                <a href={`/shop?category=${product.category}`} style={{ color: 'rgba(245,240,230,0.5)', textDecoration: 'none' }}>{product.category}</a>
+                {' / '}
+                {product.name}
+              </span>
+            </nav>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '4rem', alignItems: 'start' }}>
+              <ProductImages images={product.images} name={product.name} />
+              <div style={{ position: 'sticky', top: '6rem' }}>
+                <ProductInfo product={product} />
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </main>
+
+        {/* ── TRUST BAR ── */}
+        <div style={{ backgroundColor: '#1B2E1F', padding: '1rem 0' }}>
+          <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '0 clamp(1.5rem, 5vw, 4rem)', display: 'flex', flexWrap: 'wrap', gap: '1.5rem', justifyContent: 'center', alignItems: 'center' }}>
+            {[
+              { icon: '🚚', text: 'Free Shipping over PKR 5,000' },
+              { icon: '📦', text: 'Cash on Delivery' },
+              { icon: '↩️', text: '7-Day Easy Returns' },
+              { icon: '✅', text: '100% Authentic Products' },
+              { icon: '🔒', text: 'Secure Checkout' },
+            ].map((item) => (
+              <div key={item.text} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span style={{ fontSize: '14px' }}>{item.icon}</span>
+                <span style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: 'rgba(245,240,230,0.7)', letterSpacing: '0.1em' }}>{item.text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── TABS: Details / Ingredients / How to Use / Shipping ── */}
+        <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '4rem clamp(1.5rem, 5vw, 4rem)' }}>
+          <ProductTabs product={product} />
+        </div>
+
+        {/* ── REVIEWS ── */}
+        <div style={{ backgroundColor: '#F0EBE3', padding: '4rem 0' }}>
+          <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '0 clamp(1.5rem, 5vw, 4rem)' }}>
+            <ReviewsSection productSlug={product.slug} productName={product.name} />
+          </div>
+        </div>
+
+        {/* ── RELATED PRODUCTS ── */}
+        {relatedProducts.length > 0 && (
+          <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '4rem clamp(1.5rem, 5vw, 4rem)' }}>
+            <RelatedProducts products={relatedProducts} />
+          </div>
+        )}
+      </main>
+
+      {/* ── STICKY ADD TO CART (mobile) ── */}
+      <StickyAddToCart product={product} />
+    </>
   )
 }
