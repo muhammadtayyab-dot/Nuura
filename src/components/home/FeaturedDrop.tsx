@@ -1,18 +1,19 @@
 ﻿'use client'
 
-import { useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useGSAP } from '@gsap/react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import ProductCard from '@/components/shop/ProductCard'
-import { MOCK_PRODUCTS } from '@/lib/mockData'
+import type { Product } from '@/types'
 
 gsap.registerPlugin(ScrollTrigger)
 
 export default function FeaturedDrop() {
   const sectionRef = useRef<HTMLElement>(null)
+  const [featured, setFeatured] = useState<Product[]>([])
 
   useGSAP(
     () => {
@@ -38,7 +39,37 @@ export default function FeaturedDrop() {
     { scope: sectionRef }
   )
 
-  const featured = MOCK_PRODUCTS.slice(0, 3)
+  useEffect(() => {
+    let cancelled = false
+
+    const loadFeatured = async () => {
+      try {
+        const timestamp = Date.now()
+        const response = await fetch(`/api/products?featured=1&sort=updated&limit=3&t=${timestamp}`, {
+          cache: 'no-store',
+        })
+
+        if (!response.ok) throw new Error('Failed to load featured products')
+
+        const data = (await response.json()) as { products?: Product[] }
+        const products = Array.isArray(data.products) ? data.products : []
+
+        if (!cancelled) {
+          setFeatured(products)
+        }
+      } catch {
+        if (!cancelled) {
+          setFeatured([])
+        }
+      }
+    }
+
+    loadFeatured()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   return (
     <section ref={sectionRef} className='bg-[#0D0B09] py-32 px-8 md:px-16 lg:px-24'>
@@ -71,7 +102,7 @@ export default function FeaturedDrop() {
       <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
         {featured.map((product) => (
           <div key={product.slug} className='featured-card'>
-            <ProductCard product={product as any} />
+            <ProductCard product={product} />
           </div>
         ))}
       </div>
