@@ -7,6 +7,17 @@
 			"command": "C:\\Users\\Tayyab\\AppData\\Local\\node\\npm.cmd run dev",
 			"isBackground": true,
 			"problemMatcher": []
+		},
+		{
+			"label": "dev",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"dev"
+			],
+			"isBackground": true,
+			"group": "build"
 		}
 	]
 }

@@ -1,117 +1,459 @@
-'use client'
+ 'use client'
 
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { MessageCircle, X, Send, Trash2, Bot, User, Loader2 } from 'lucide-react'
+import {
+  MessageCircle,
+  X,
+  Send,
+  Trash2,
+  Bot,
+  User,
+  Loader2,
+  ExternalLink,
+} from 'lucide-react'
 
-const MAX_MESSAGES = 20
-const SESSION_KEY = 'nuura_admin_chat'
-const COUNTER_KEY = 'nuura_admin_chat_count'
+const SESSION_KEY = 'nuura_admin_chat_v2'
 
-const SYSTEM_PROMPT = `You are the AI admin assistant for Nuura, a luxury e-commerce brand from Pakistan selling self-care and accessories products. You have full access to admin operations.
+interface TableData {
+  headers: string[]
+  rows: string[][]
+  note?: string
+}
 
-When you need to perform an action, append a JSON block at the very end of your message using this exact format (nothing after the JSON):
-
-For API calls: {"action":{"type":"api_call","method":"GET","endpoint":"/api/products","body":null,"followUpMessage":"Here are your products:"}}
-For navigation: {"action":{"type":"navigate","navigateTo":"/admin/orders"}}
-For confirmations: {"action":{"type":"confirm_required","confirmMessage":"Are you sure?","pendingAction":{"type":"api_call","method":"DELETE","endpoint":"/api/products/SLUG","body":null}}}
-For text only: {"action":{"type":"none"}}
-
-Available API endpoints:
-- GET /api/products?limit=100 — list all products (fields: _id, slug, name, price, stockCount, lowStockThreshold, category, seo, isFeatured, isNewDrop, isBestSeller, inStock)
-- POST /api/products — create product (body: name, tagline, description, price, category, stockCount, images[], tags[], seo{title,description,keywords[],ogTitle,ogDescription})
-- PATCH /api/products/[slug] — update product by slug (any fields)
-- DELETE /api/products/[slug] — delete product by slug
-- GET /api/orders — list orders (?status=pending|confirmed|shipped|delivered|cancelled, ?days=7)
-- PATCH /api/orders/[id] — update order (body: {status: confirmed|cancelled|shipped|delivered})
-- GET /api/customers — list customers
-- GET /api/admin/stats?days=7 — analytics (revenue, orderCount, topProducts)
-
-Rules:
-- Always be concise. Format lists as markdown tables.
-- For low stock: filter products where stockCount <= lowStockThreshold
-- For missing SEO: filter products where seo.title is empty or missing
-- Never make up data. Only report what APIs return.
-- Always confirm before deleting.
-- When updating SEO fields use the seo object: {title, description, keywords, ogTitle, ogDescription}
-- If you cannot do something via API say exactly where in the dashboard to go.
-- For "show products" always use GET /api/products and format as a table with name, price, stock, category columns.`
+interface NavLink {
+  label: string
+  href: string
+}
 
 interface ChatMessage {
   role: 'user' | 'assistant'
   content: string
+  table?: TableData | null
   isLoading?: boolean
-  confirmAction?: ParsedAction
-  apiResult?: string
+  links?: NavLink[]
+  suggestions?: string[]
 }
 
-interface ParsedAction {
-  type: 'api_call' | 'navigate' | 'confirm_required' | 'none'
-  method?: string
-  endpoint?: string
-  body?: Record<string, unknown> | null
+type ProcessResult = {
+  text: string
+  table?: TableData | null
+  links?: NavLink[]
+  suggestions?: string[]
   navigateTo?: string
-  confirmMessage?: string
-  pendingAction?: ParsedAction
-  followUpMessage?: string
 }
 
-function extractAction(text: string): { cleanText: string; action: ParsedAction | null } {
-  const match = text.match(/\{"action":\{[\s\S]*?\}\}$/)
-  if (!match) return { cleanText: text, action: null }
-  try {
-    const parsed = JSON.parse(match[0])
+function matchesAny(q: string, phrases: string[]) {
+  return phrases.some((phrase) => q.includes(phrase))
+}
+
+function formatPKR(value: unknown) {
+  const numeric = typeof value === 'number' ? value : Number(String(value ?? '').replace(/[^0-9.-]/g, ''))
+  return Number.isFinite(numeric) ? `PKR ${numeric.toLocaleString()}` : 'PKR 0'
+}
+
+function formatDate(value: unknown) {
+  if (!value) return 'N/A'
+  const date = new Date(String(value))
+  return Number.isNaN(date.getTime()) ? 'N/A' : date.toLocaleDateString()
+}
+
+async function fetchProducts() {
+  const res = await fetch('/api/products?limit=100', { cache: 'no-store' })
+  if (!res.ok) throw new Error('Could not load products')
+  const data = await res.json()
+  return (data.products ?? []) as Record<string, unknown>[]
+}
+
+async function fetchOrders(params = '') {
+  const res = await fetch(`/api/orders${params ? `?${params}` : ''}`, { cache: 'no-store' })
+  if (!res.ok) throw new Error('Could not load orders')
+  const data = await res.json()
+  return (data.orders ?? data ?? []) as Record<string, unknown>[]
+}
+
+async function fetchCustomers() {
+  const res = await fetch('/api/customers', { cache: 'no-store' })
+  if (!res.ok) throw new Error('Could not load customers')
+  const data = await res.json()
+  return (data.customers ?? data ?? []) as Record<string, unknown>[]
+}
+
+async function fetchStats(days = 30) {
+  const res = await fetch(`/api/admin/stats?days=${days}`, { cache: 'no-store' })
+  if (!res.ok) throw new Error('Could not load stats')
+  return res.json()
+}
+
+function productsToTable(products: Record<string, unknown>[], note?: string): TableData {
+  return {
+    headers: ['Name', 'Price', 'Stock', 'Category', 'Status'],
+    rows: products.map((product) => {
+      const stockCount = Number(product.stockCount ?? 0)
+      const inStock = product.inStock !== false && stockCount > 0
+      return [
+        String(product.name ?? 'N/A'),
+        formatPKR(product.price),
+        String(stockCount),
+        String(product.category ?? 'N/A'),
+        inStock ? 'In Stock' : 'Out of Stock',
+      ]
+    }),
+    note: note ?? `${products.length} product${products.length === 1 ? '' : 's'}`,
+  }
+}
+
+function ordersToTable(orders: Record<string, unknown>[], note?: string): TableData {
+  return {
+    headers: ['Order', 'Customer', 'Total', 'Status', 'Date'],
+    rows: orders.map((order) => {
+      const orderId = String(order.orderNumber ?? order._id ?? 'N/A')
+      const customerRecord = (order.customer ?? {}) as Record<string, unknown>
+      const customer = String(customerRecord.name ?? order.customerName ?? customerRecord.email ?? order.email ?? 'N/A')
+      const total = formatPKR(order.total ?? order.totalAmount ?? order.amount)
+      const status = String(order.orderStatus ?? order.status ?? 'N/A')
+      return [orderId, customer, total, status, formatDate(order.createdAt)]
+    }),
+    note: note ?? `${orders.length} order${orders.length === 1 ? '' : 's'}`,
+  }
+}
+
+function customersToTable(customers: Record<string, unknown>[], note?: string): TableData {
+  return {
+    headers: ['Name', 'Email', 'Orders', 'Spent', 'Joined'],
+    rows: customers.map((customer) => [
+      String(customer.name ?? 'N/A'),
+      String(customer.email ?? 'N/A'),
+      String(customer.orderCount ?? 0),
+      formatPKR(customer.totalSpent ?? 0),
+      formatDate(customer.joinDate ?? customer.createdAt),
+    ]),
+    note: note ?? `${customers.length} customer${customers.length === 1 ? '' : 's'}`,
+  }
+}
+
+function statsToText(stats: Record<string, unknown>) {
+  const revenue = formatPKR(stats.confirmedRevenue ?? stats.revenue ?? stats.totalRevenue ?? 0)
+  const orderCount = Number(stats.totalOrders ?? stats.orderCount ?? stats.orders ?? 0)
+  const pending = Number(stats.pendingVerification ?? stats.pendingOrders ?? 0)
+  const topProducts = Array.isArray(stats.topProducts) ? stats.topProducts : []
+
+  let text = `**Sales Summary**\n\n`
+  text += `• Revenue: **${revenue}**\n`
+  text += `• Orders: **${orderCount}**\n`
+  text += `• Pending verification: **${pending}**`
+
+  if (topProducts.length > 0) {
+    text += `\n\n**Top Products**`
+  }
+
+  return text
+}
+
+const HELP_TEXT = `Here's what I can do:\n\n**Products**\n- show products\n- low stock\n- missing SEO\n\n**Orders**\n- show orders\n- pending orders\n- confirmed orders\n- today orders\n- this week\n\n**Reports**\n- revenue\n- stats\n- analytics\n\n**Customers**\n- show customers\n- inactive customers\n\n**Navigate**\n- go to orders\n- go to products\n- go to customers\n- go to analytics\n- go to settings`
+
+async function processCommand(input: string): Promise<ProcessResult> {
+  const q = input.toLowerCase().trim()
+
+  if (matchesAny(q, ['go to orders', 'open orders', 'navigate orders'])) {
     return {
-      cleanText: text.slice(0, text.lastIndexOf(match[0])).trim(),
-      action: parsed.action as ParsedAction,
+      text: 'Taking you to Orders...',
+      links: [{ label: 'Go to Orders', href: '/admin/orders' }],
+      navigateTo: '/admin/orders',
     }
-  } catch {
-    return { cleanText: text, action: null }
+  }
+
+  if (matchesAny(q, ['go to products', 'open products', 'navigate products'])) {
+    return {
+      text: 'Taking you to Products...',
+      links: [{ label: 'Go to Products', href: '/admin/products' }],
+      navigateTo: '/admin/products',
+    }
+  }
+
+  if (matchesAny(q, ['go to customers', 'open customers', 'navigate customers'])) {
+    return {
+      text: 'Taking you to Customers...',
+      links: [{ label: 'Go to Customers', href: '/admin/customers' }],
+      navigateTo: '/admin/customers',
+    }
+  }
+
+  if (matchesAny(q, ['go to analytics', 'open analytics', 'navigate analytics'])) {
+    return {
+      text: 'Taking you to Analytics...',
+      links: [{ label: 'Go to Analytics', href: '/admin/analytics' }],
+      navigateTo: '/admin/analytics',
+    }
+  }
+
+  if (matchesAny(q, ['go to settings', 'open settings'])) {
+    return {
+      text: 'Taking you to Settings...',
+      links: [{ label: 'Go to Settings', href: '/admin/settings' }],
+      navigateTo: '/admin/settings',
+    }
+  }
+
+  if (q.includes('help') || q.includes('what can you do') || q.includes('commands')) {
+    return {
+      text: HELP_TEXT,
+      suggestions: ['Show products', 'Low stock', 'Pending orders', 'Revenue', 'Show customers'],
+    }
+  }
+
+  if (
+    matchesAny(q, [
+      'show products',
+      'list products',
+      'all products',
+      'view products',
+    ])
+  ) {
+    const products = await fetchProducts()
+    if (!products.length) {
+      return { text: 'No products found in your store.' }
+    }
+    return {
+      text: `Found **${products.length} product${products.length === 1 ? '' : 's'}** in your catalog:`,
+      table: productsToTable(products, `${products.length} product${products.length === 1 ? '' : 's'}`),
+    }
+  }
+
+  if (matchesAny(q, ['low stock', 'stock alert', 'running low'])) {
+    const products = await fetchProducts()
+    const lowStock = products.filter((product) => {
+      const stockCount = Number(product.stockCount ?? 0)
+      const threshold = Number(product.lowStockThreshold ?? 10)
+      return stockCount <= threshold
+    })
+
+    if (!lowStock.length) {
+      return { text: '✅ All products are well stocked. No alerts.' }
+    }
+
+    return {
+      text: `⚠️ **${lowStock.length} product${lowStock.length === 1 ? '' : 's'}** are at or below their low-stock threshold:`,
+      table: productsToTable(lowStock, 'Low stock alert'),
+    }
+  }
+
+  if (matchesAny(q, ['no seo', 'missing seo', 'no meta', 'missing meta'])) {
+    const products = await fetchProducts()
+    const missingSeo = products.filter((product) => {
+      const seo = product.seo as Record<string, unknown> | undefined
+      return !seo?.title
+    })
+
+    if (!missingSeo.length) {
+      return { text: '✅ All products have SEO titles set.' }
+    }
+
+    return {
+      text: `Found **${missingSeo.length} product${missingSeo.length === 1 ? '' : 's'}** with missing SEO:`,
+      table: productsToTable(missingSeo, 'Missing SEO title'),
+    }
+  }
+
+  if (matchesAny(q, ['show orders', 'list orders', 'all orders', 'view orders'])) {
+    const orders = await fetchOrders('days=30')
+    if (!orders.length) {
+      return { text: 'No orders found.' }
+    }
+    return {
+      text: `**${orders.length} total order${orders.length === 1 ? '' : 's'}**:`,
+      table: ordersToTable(orders, `${orders.length} order${orders.length === 1 ? '' : 's'}`),
+    }
+  }
+
+  if (matchesAny(q, ['pending orders', 'orders pending'])) {
+    const orders = await fetchOrders('status=pending')
+    const filtered = orders.filter((order) => String(order.orderStatus ?? order.status ?? '').toLowerCase() === 'pending')
+    if (!filtered.length) {
+      return { text: '✅ No pending orders right now.' }
+    }
+    return {
+      text: `**${filtered.length} pending order${filtered.length === 1 ? '' : 's'}**:`,
+      table: ordersToTable(filtered, 'Pending orders'),
+    }
+  }
+
+  if (matchesAny(q, ['confirmed orders'])) {
+    const orders = await fetchOrders('status=confirmed')
+    const filtered = orders.filter((order) => String(order.orderStatus ?? order.status ?? '').toLowerCase() === 'confirmed')
+    if (!filtered.length) {
+      return { text: 'No confirmed orders.' }
+    }
+    return {
+      text: `**${filtered.length} confirmed order${filtered.length === 1 ? '' : 's'}**:`,
+      table: ordersToTable(filtered, 'Confirmed orders'),
+    }
+  }
+
+  if (matchesAny(q, ['today orders', 'orders today'])) {
+    const orders = await fetchOrders('days=1')
+    const start = Date.now() - 24 * 60 * 60 * 1000
+    const filtered = orders.filter((order) => {
+      const createdAt = new Date(String(order.createdAt ?? '')).getTime()
+      return Number.isFinite(createdAt) && createdAt >= start
+    })
+
+    if (!filtered.length) {
+      return { text: 'No orders today yet.' }
+    }
+
+    return {
+      text: `**${filtered.length} order${filtered.length === 1 ? '' : 's'}** today:`,
+      table: ordersToTable(filtered, 'Today orders'),
+    }
+  }
+
+  if (matchesAny(q, ['this week', 'week orders', 'orders this week'])) {
+    const orders = await fetchOrders('days=7')
+    const start = Date.now() - 7 * 24 * 60 * 60 * 1000
+    const filtered = orders.filter((order) => {
+      const createdAt = new Date(String(order.createdAt ?? '')).getTime()
+      return Number.isFinite(createdAt) && createdAt >= start
+    })
+
+    if (!filtered.length) {
+      return { text: 'No orders this week.' }
+    }
+
+    return {
+      text: `**${filtered.length} order${filtered.length === 1 ? '' : 's'}** this week:`,
+      table: ordersToTable(filtered, 'This week orders'),
+    }
+  }
+
+  if (matchesAny(q, ['revenue', 'sales', 'earnings', 'stats', 'analytics'])) {
+    const stats = await fetchStats(30)
+    const topProducts = Array.isArray(stats.topProducts) ? stats.topProducts.slice(0, 5) : []
+    const summaryText = statsToText(stats)
+
+    const table: TableData | null = topProducts.length
+      ? {
+          headers: ['Product', 'Units', 'Revenue'],
+          rows: topProducts.map((product: Record<string, unknown>) => [
+            String(product.name ?? 'N/A'),
+            String(product.units ?? product.count ?? 0),
+            formatPKR(product.revenue ?? 0),
+          ]),
+          note: 'Top products from the last 30 days',
+        }
+      : null
+
+    return {
+      text: summaryText,
+      table,
+    }
+  }
+
+  if (matchesAny(q, ['no orders', 'never ordered', 'inactive customers'])) {
+    const customers = await fetchCustomers()
+    const inactive = customers.filter((customer) => Number(customer.orderCount ?? 0) === 0)
+
+    if (!inactive.length) {
+      return { text: '✅ All registered customers have placed at least one order.' }
+    }
+
+    return {
+      text: `**${inactive.length} customer${inactive.length === 1 ? '' : 's'}** have never ordered:`,
+      table: customersToTable(inactive, 'Inactive customers'),
+    }
+  }
+
+  if (matchesAny(q, ['customers', 'show customers', 'list customers', 'all customers'])) {
+    const customers = await fetchCustomers()
+    if (!customers.length) {
+      return { text: 'No registered customers yet.' }
+    }
+    return {
+      text: `**${customers.length} registered customer${customers.length === 1 ? '' : 's'}**:`,
+      table: customersToTable(customers, `${customers.length} customer${customers.length === 1 ? '' : 's'}`),
+    }
+  }
+
+  return {
+    text: "I didn't understand that. Type **help** to see what I can do.",
+    suggestions: ['Show products', 'Low stock', 'Pending orders', 'Revenue', 'Show customers'],
   }
 }
 
-function formatApiResult(data: unknown): string {
-  if (!data) return 'No data returned.'
-  if (typeof data === 'string') return data
+function RenderText({ text }: { text: string }) {
+  const lines = text.split('\n')
 
-  // Products list
-  if (typeof data === 'object' && data !== null && 'products' in data) {
-    const products = (data as { products: Record<string, unknown>[] }).products
-    if (!products?.length) return 'No products found.'
-    const rows = products
-      .slice(0, 20)
-      .map(
-        (p) =>
-          `| ${p.name} | PKR ${p.price} | ${p.stockCount} | ${p.category} |`
-      )
-    return `| Name | Price | Stock | Category |\n|------|-------|-------|----------|\n${rows.join('\n')}\n\n_Showing ${Math.min(products.length, 20)} of ${products.length} products_`
-  }
+  return (
+    <div className="space-y-0.5">
+      {lines.map((line, index) => {
+        if (!line.trim()) return <br key={index} />
 
-  // Orders list
-  if (typeof data === 'object' && data !== null && 'orders' in data) {
-    const orders = (data as { orders: Record<string, unknown>[] }).orders
-    if (!orders?.length) return 'No orders found.'
-    const rows = orders
-      .slice(0, 10)
-      .map(
-        (o) =>
-          `| ${String(o._id).slice(-6)} | ${o.customerName ?? o.email ?? 'N/A'} | PKR ${o.total ?? o.totalAmount ?? 0} | ${o.status} |`
-      )
-    return `| ID | Customer | Total | Status |\n|----|----------|-------|--------|\n${rows.join('\n')}`
-  }
+        const segments: React.ReactNode[] = []
+        const regex = /\*\*(.+?)\*\*/g
+        let lastIndex = 0
+        let match: RegExpExecArray | null
 
-  // Customers list
-  if (typeof data === 'object' && data !== null && 'customers' in data) {
-    const customers = (data as { customers: Record<string, unknown>[] }).customers
-    if (!customers?.length) return 'No customers found.'
-    const rows = customers
-      .slice(0, 10)
-      .map((c) => `| ${c.name ?? c.firstName ?? 'N/A'} | ${c.email} | ${c.orderCount ?? 0} orders |`)
-    return `| Name | Email | Orders |\n|------|-------|--------|\n${rows.join('\n')}`
-  }
+        while ((match = regex.exec(line))) {
+          const matchIndex = match.index
+          if (matchIndex > lastIndex) {
+            segments.push(line.slice(lastIndex, matchIndex))
+          }
+          segments.push(<strong key={`${index}-${matchIndex}`}>{match[1]}</strong>)
+          lastIndex = matchIndex + match[0].length
+        }
 
-  return JSON.stringify(data, null, 2)
+        if (lastIndex < line.length) {
+          segments.push(line.slice(lastIndex))
+        }
+
+        return (
+          <p key={index} className="leading-relaxed whitespace-pre-wrap">
+            {segments.length ? segments : line}
+          </p>
+        )
+      })}
+    </div>
+  )
+
 }
+
+function RenderTable({ table }: { table: TableData }) {
+  return (
+    <div className="mt-2">
+      <div className="overflow-x-auto rounded-lg border border-white/10">
+        <table className="w-full border-collapse text-[10px]">
+          <thead>
+            <tr className="bg-white/10">
+              {table.headers.map((header) => (
+                <th
+                  key={header}
+                  className="whitespace-nowrap border-b border-white/10 px-2 py-1.5 text-left font-sans uppercase tracking-wider text-white/60"
+                >
+                  {header}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {table.rows.map((row, rowIndex) => (
+              <tr key={rowIndex} className="border-b border-white/5 transition-colors hover:bg-white/5">
+                {row.map((cell, cellIndex) => (
+                  <td key={cellIndex} className="whitespace-nowrap px-2 py-1.5 text-white/80">
+                    {cell}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {table.note && <p className="mt-1 font-sans text-[9px] text-white/30">{table.note}</p>}
+    </div>
+  )
+}
+
+const SUGGESTIONS = ['Show products', 'Low stock', 'Pending orders', 'Revenue', 'Show customers', 'Help']
 
 export default function AdminChatWidget() {
   const router = useRouter()
@@ -119,23 +461,18 @@ export default function AdminChatWidget() {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
-  const [msgCount, setMsgCount] = useState(0)
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // Load from sessionStorage on mount
   useEffect(() => {
     try {
       const saved = sessionStorage.getItem(SESSION_KEY)
-      const count = sessionStorage.getItem(COUNTER_KEY)
       if (saved) setMessages(JSON.parse(saved))
-      if (count) setMsgCount(Number(count))
     } catch {
       // ignore
     }
   }, [])
 
-  // Persist to sessionStorage
   useEffect(() => {
     try {
       sessionStorage.setItem(SESSION_KEY, JSON.stringify(messages))
@@ -149,269 +486,124 @@ export default function AdminChatWidget() {
   }, [messages, open])
 
   useEffect(() => {
-    if (open) setTimeout(() => inputRef.current?.focus(), 100)
+    if (open) {
+      setTimeout(() => inputRef.current?.focus(), 100)
+    }
   }, [open])
 
-  const executeApiCall = useCallback(async (action: ParsedAction): Promise<string> => {
-    try {
-      const res = await fetch(action.endpoint!, {
-        method: action.method ?? 'GET',
-        headers: action.body ? { 'Content-Type': 'application/json' } : undefined,
-        body: action.body ? JSON.stringify(action.body) : undefined,
-      })
-      const data = await res.json()
-      if (!res.ok) return `Error: ${data.error ?? 'Request failed'}`
-      return formatApiResult(data)
-    } catch {
-      return 'Network error — could not complete the request.'
-    }
-  }, [])
+  const sendMessage = useCallback(
+    async (text: string) => {
+      const trimmed = text.trim()
+      if (!trimmed || loading) return
 
-  const sendMessage = useCallback(async (userText: string) => {
-    if (!userText.trim() || loading || msgCount >= MAX_MESSAGES) return
+      const userMsg: ChatMessage = { role: 'user', content: trimmed }
+      const loadingMsg: ChatMessage = { role: 'assistant', content: '', isLoading: true }
 
-    const newCount = msgCount + 1
-    setMsgCount(newCount)
-    sessionStorage.setItem(COUNTER_KEY, String(newCount))
+      setMessages((prev) => [...prev, userMsg, loadingMsg])
+      setInput('')
+      setLoading(true)
 
-    const userMsg: ChatMessage = { role: 'user', content: userText }
-    const loadingMsg: ChatMessage = { role: 'assistant', content: '', isLoading: true }
+      try {
+        const result = await processCommand(trimmed)
 
-    setMessages((prev) => [...prev, userMsg, loadingMsg])
-    setInput('')
-    setLoading(true)
+        if (result.navigateTo) {
+          setMessages((prev) =>
+            prev.slice(0, -1).concat({
+              role: 'assistant',
+              content: result.text,
+              links: result.links,
+            })
+          )
+          setTimeout(() => router.push(result.navigateTo!), 250)
+          return
+        }
 
-    try {
-      // Build conversation history for the API (exclude loading/confirm UI messages)
-      const history = [...messages, userMsg]
-        .filter((m) => !m.isLoading)
-        .map((m) => ({ role: m.role, content: m.content }))
-
-      const res = await fetch('/api/admin-chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: history,
-          system: SYSTEM_PROMPT,
-        }),
-      })
-
-      const data = await res.json()
-
-      if (!res.ok) {
         setMessages((prev) =>
           prev.slice(0, -1).concat({
             role: 'assistant',
-            content: "I couldn't process that request. Please try again.",
+            content: result.text,
+            table: result.table ?? null,
+            links: result.links,
+            suggestions: result.suggestions,
           })
         )
-        return
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Something went wrong.'
+        setMessages((prev) =>
+          prev.slice(0, -1).concat({
+            role: 'assistant',
+            content: `❌ ${message} Please try again.`,
+            suggestions: ['Show products', 'Pending orders', 'Revenue', 'Help'],
+          })
+        )
+      } finally {
+        setLoading(false)
       }
-
-      const rawContent: string =
-        data.content?.[0]?.text ??
-        data.message ??
-        data.response ??
-        data.text ??
-        ''
-
-      const { cleanText, action } = extractAction(rawContent)
-
-      if (action?.type === 'navigate' && action.navigateTo) {
-        setMessages((prev) =>
-          prev.slice(0, -1).concat({
-            role: 'assistant',
-            content: cleanText || `Taking you to ${action.navigateTo}...`,
-          })
-        )
-        setTimeout(() => router.push(action.navigateTo!), 500)
-        return
-      }
-
-      if (action?.type === 'confirm_required') {
-        setMessages((prev) =>
-          prev.slice(0, -1).concat({
-            role: 'assistant',
-            content: cleanText || action.confirmMessage || 'Are you sure?',
-            confirmAction: action,
-          })
-        )
-        return
-      }
-
-      if (action?.type === 'api_call' && action.endpoint) {
-        setMessages((prev) =>
-          prev.slice(0, -1).concat({
-            role: 'assistant',
-            content: cleanText || 'Fetching data...',
-            isLoading: true,
-          })
-        )
-        const result = await executeApiCall(action)
-        setMessages((prev) =>
-          prev.slice(0, -1).concat({
-            role: 'assistant',
-            content: `${cleanText ? cleanText + '\n\n' : ''}${action.followUpMessage ? action.followUpMessage + '\n\n' : ''}${result}`,
-          })
-        )
-        return
-      }
-
-      setMessages((prev) =>
-        prev.slice(0, -1).concat({
-          role: 'assistant',
-          content: cleanText || rawContent || 'Done.',
-        })
-      )
-    } catch {
-      setMessages((prev) =>
-        prev.slice(0, -1).concat({
-          role: 'assistant',
-          content: "Something went wrong. Please try again.",
-        })
-      )
-    } finally {
-      setLoading(false)
-    }
-  }, [messages, loading, msgCount, executeApiCall, router])
-
-  async function handleConfirm(msg: ChatMessage, confirmed: boolean) {
-    if (!confirmed) {
-      setMessages((prev) =>
-        prev.map((m) =>
-          m === msg ? { ...m, confirmAction: undefined, content: m.content + '\n\n_Action cancelled._' } : m
-        )
-      )
-      return
-    }
-    const action = msg.confirmAction?.pendingAction
-    if (!action) return
-    setMessages((prev) =>
-      prev.map((m) =>
-        m === msg ? { ...m, confirmAction: undefined, isLoading: true } : m
-      )
-    )
-    const result = await executeApiCall(action)
-    setMessages((prev) =>
-      prev.map((m) =>
-        m === msg ? { ...m, isLoading: false, content: m.content + '\n\n' + result } : m
-      )
-    )
-  }
+    },
+    [loading, router]
+  )
 
   function clearChat() {
     setMessages([])
-    setMsgCount(0)
     sessionStorage.removeItem(SESSION_KEY)
-    sessionStorage.removeItem(COUNTER_KEY)
   }
-
-  function renderContent(content: string) {
-    // Simple markdown table renderer
-    const lines = content.split('\n')
-    const elements: React.ReactNode[] = []
-    let tableLines: string[] = []
-
-    const flushTable = (key: string) => {
-      if (!tableLines.length) return
-      const rows = tableLines.filter((l) => !l.match(/^\|[-| ]+\|$/))
-      elements.push(
-        <div key={key} className="overflow-x-auto my-2">
-          <table className="text-xs w-full border-collapse">
-            {rows.map((row, ri) => {
-              const cells = row.split('|').filter((_, i, a) => i > 0 && i < a.length - 1)
-              return (
-                <tr key={ri} className={ri === 0 ? 'bg-white/10' : ''}>
-                  {cells.map((cell, ci) => (
-                    <td key={ci} className="border border-white/20 px-2 py-1 whitespace-nowrap">
-                      {cell.trim()}
-                    </td>
-                  ))}
-                </tr>
-              )
-            })}
-          </table>
-        </div>
-      )
-      tableLines = []
-    }
-
-    lines.forEach((line, i) => {
-      if (line.startsWith('|')) {
-        tableLines.push(line)
-      } else {
-        if (tableLines.length) flushTable(`table-${i}`)
-        if (line.trim()) {
-          elements.push(
-            <p key={i} className="mb-1 leading-relaxed">
-              {line.replace(/^_(.+)_$/, '$1')}
-            </p>
-          )
-        }
-      }
-    })
-    if (tableLines.length) flushTable('table-end')
-
-    return elements
-  }
-
-  const limitReached = msgCount >= MAX_MESSAGES
 
   return (
     <>
-      {/* Floating button */}
       <button
-        onClick={() => setOpen((v) => !v)}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-n-forest text-n-cream rounded-full shadow-lg flex items-center justify-center hover:bg-n-gold hover:text-n-forest transition-all duration-200 hover:scale-110"
+        onClick={() => setOpen((value) => !value)}
+        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-n-forest text-n-cream shadow-xl transition-all duration-200 hover:bg-n-gold hover:text-n-forest hover:scale-110 active:scale-95"
         title="Admin Assistant"
+        aria-label="Open admin assistant"
       >
         {open ? <X size={20} strokeWidth={1.5} /> : <MessageCircle size={20} strokeWidth={1.5} />}
       </button>
 
-      {/* Chat panel */}
       {open && (
-        <div className="fixed bottom-24 right-6 z-50 w-[420px] max-w-[calc(100vw-2rem)] h-[600px] max-h-[calc(100vh-8rem)] bg-[#1a1f1c] border border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
-          {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-n-forest/20">
+        <div className="fixed bottom-24 right-6 z-50 flex h-[600px] max-h-[calc(100vh-8rem)] w-[420px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#181d1a] shadow-2xl">
+          <div className="flex flex-shrink-0 items-center justify-between border-b border-white/10 bg-n-forest/20 px-4 py-3">
             <div className="flex items-center gap-2">
-              <Bot size={16} strokeWidth={1.5} className="text-n-gold" />
-              <span className="font-sans text-xs tracking-widest uppercase text-white">
-                Admin Assistant
+              <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+              <Bot size={15} strokeWidth={1.5} className="text-n-gold" />
+              <span className="font-sans text-xs uppercase tracking-widest text-white/90">
+                Store Assistant
               </span>
             </div>
-            <div className="flex items-center gap-3">
-              <span className={`font-sans text-[10px] ${limitReached ? 'text-red-400' : 'text-white/50'}`}>
-                {msgCount}/{MAX_MESSAGES}
-              </span>
+            <div className="flex items-center gap-2">
               <button
                 onClick={clearChat}
-                className="text-white/40 hover:text-white/80 transition-colors"
+                className="rounded p-1 text-white/30 transition-colors hover:text-white/70"
                 title="Clear chat"
+                aria-label="Clear chat"
               >
-                <Trash2 size={14} strokeWidth={1.5} />
+                <Trash2 size={13} strokeWidth={1.5} />
+              </button>
+              <button
+                onClick={() => setOpen(false)}
+                className="rounded p-1 text-white/30 transition-colors hover:text-white/70"
+                aria-label="Close assistant"
+              >
+                <X size={13} strokeWidth={1.5} />
               </button>
             </div>
           </div>
 
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 min-h-0">
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4" data-lenis-prevent>
             {messages.length === 0 && (
-              <div className="text-center py-8">
-                <Bot size={32} strokeWidth={1} className="text-white/20 mx-auto mb-3" />
-                <p className="font-sans text-xs text-white/40">
-                  Ask me anything about your store.
+              <div className="flex h-full flex-col items-center justify-center px-4 text-center">
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-n-forest/20">
+                  <Bot size={24} strokeWidth={1} className="text-n-gold" />
+                </div>
+                <p className="mb-1 font-sans text-xs text-white/60">Store Assistant</p>
+                <p className="mb-6 font-sans text-[11px] text-white/30">
+                  Ask about products, orders, customers, or analytics.
                 </p>
-                <div className="mt-4 space-y-2">
-                  {[
-                    'Show me all products',
-                    'Which products are low on stock?',
-                    'Show me pending orders',
-                    'What is my revenue this week?',
-                  ].map((suggestion) => (
+                <div className="grid w-full grid-cols-2 gap-2">
+                  {SUGGESTIONS.map((suggestion) => (
                     <button
                       key={suggestion}
                       onClick={() => sendMessage(suggestion)}
-                      className="block w-full text-left font-sans text-[10px] text-white/50 hover:text-white/80 border border-white/10 hover:border-white/30 px-3 py-2 rounded-lg transition-colors"
+                      className="rounded-lg border border-white/10 px-3 py-2 text-left font-sans text-[10px] text-white/50 transition-all hover:border-white/30 hover:bg-white/5 hover:text-white/90"
                     >
                       {suggestion}
                     </button>
@@ -420,93 +612,106 @@ export default function AdminChatWidget() {
               </div>
             )}
 
-            {messages.map((msg, i) => (
+            {messages.map((message, index) => (
               <div
-                key={i}
-                className={`flex gap-2 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
+                key={index}
+                className={`flex gap-2.5 ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
               >
                 <div
-                  className={`w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center mt-1 ${
-                    msg.role === 'user' ? 'bg-n-forest' : 'bg-n-gold/20'
+                  className={`mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full ${
+                    message.role === 'user'
+                      ? 'bg-n-forest'
+                      : 'border border-n-gold/30 bg-n-gold/20'
                   }`}
                 >
-                  {msg.role === 'user' ? (
-                    <User size={12} strokeWidth={1.5} className="text-white" />
+                  {message.role === 'user' ? (
+                    <User size={13} strokeWidth={1.5} className="text-white" />
                   ) : (
-                    <Bot size={12} strokeWidth={1.5} className="text-n-gold" />
+                    <Bot size={13} strokeWidth={1.5} className="text-n-gold" />
                   )}
                 </div>
 
                 <div
-                  className={`max-w-[85%] rounded-xl px-3 py-2 font-sans text-xs ${
-                    msg.role === 'user'
-                      ? 'bg-n-forest text-white rounded-tr-sm'
-                      : 'bg-white/5 text-white/90 rounded-tl-sm'
+                  className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 font-sans text-[11px] leading-relaxed ${
+                    message.role === 'user'
+                      ? 'rounded-tr-sm bg-n-forest text-white'
+                      : 'rounded-tl-sm border border-white/8 bg-white/5 text-white/90'
                   }`}
                 >
-                  {msg.isLoading ? (
-                    <div className="flex gap-1 items-center py-1">
-                      <span className="w-1.5 h-1.5 bg-white/50 rounded-full animate-bounce [animation-delay:0ms]" />
-                      <span className="w-1.5 h-1.5 bg-white/50 rounded-full animate-bounce [animation-delay:150ms]" />
-                      <span className="w-1.5 h-1.5 bg-white/50 rounded-full animate-bounce [animation-delay:300ms]" />
+                  {message.isLoading ? (
+                    <div className="flex items-center gap-1 py-0.5">
+                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-white/40 [animation-delay:0ms]" />
+                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-white/40 [animation-delay:150ms]" />
+                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-white/40 [animation-delay:300ms]" />
                     </div>
                   ) : (
                     <>
-                      {renderContent(msg.content)}
-                      {msg.confirmAction && (
-                        <div className="flex gap-2 mt-2">
-                          <button
-                            onClick={() => handleConfirm(msg, true)}
-                            className="bg-red-500/80 hover:bg-red-500 text-white px-3 py-1 rounded font-sans text-[10px] tracking-wider uppercase transition-colors"
-                          >
-                            Yes, do it
-                          </button>
-                          <button
-                            onClick={() => handleConfirm(msg, false)}
-                            className="bg-white/10 hover:bg-white/20 text-white px-3 py-1 rounded font-sans text-[10px] tracking-wider uppercase transition-colors"
-                          >
-                            Cancel
-                          </button>
+                      <RenderText text={message.content} />
+
+                      {message.table && <RenderTable table={message.table} />}
+
+                      {message.links?.length ? (
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {message.links.map((link) => (
+                            <Link
+                              key={link.href}
+                              href={link.href}
+                              className="inline-flex items-center gap-1 rounded-full border border-n-gold/30 px-2.5 py-1 text-[10px] uppercase tracking-wider text-n-gold transition-colors hover:border-white/30 hover:text-white"
+                            >
+                              <ExternalLink size={10} strokeWidth={1.5} />
+                              {link.label}
+                            </Link>
+                          ))}
                         </div>
-                      )}
+                      ) : null}
+
+                      {message.suggestions?.length ? (
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {message.suggestions.map((suggestion) => (
+                            <button
+                              key={suggestion}
+                              onClick={() => sendMessage(suggestion)}
+                              className="inline-flex items-center gap-1 rounded-full border border-white/10 px-2.5 py-1 text-[10px] uppercase tracking-wider text-white/60 transition-colors hover:border-n-gold/30 hover:text-n-gold"
+                            >
+                              {suggestion}
+                            </button>
+                          ))}
+                        </div>
+                      ) : null}
                     </>
                   )}
                 </div>
               </div>
             ))}
+
             <div ref={bottomRef} />
           </div>
 
-          {/* Input */}
-          <div className="px-4 py-3 border-t border-white/10">
-            {limitReached ? (
-              <p className="font-sans text-[10px] text-red-400 text-center py-2">
-                Session limit reached. Refresh to start a new session.
-              </p>
-            ) : (
-              <div className="flex gap-2">
-                <input
-                  ref={inputRef}
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage(input)}
-                  placeholder="Ask anything about your store..."
-                  disabled={loading}
-                  className="flex-1 bg-white/5 border border-white/10 text-white placeholder-white/30 text-xs font-sans px-3 py-2 rounded-lg focus:outline-none focus:border-n-gold/50 disabled:opacity-50"
-                />
-                <button
-                  onClick={() => sendMessage(input)}
-                  disabled={loading || !input.trim()}
-                  className="w-9 h-9 bg-n-forest hover:bg-n-gold text-white hover:text-n-forest rounded-lg flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
-                >
-                  {loading ? (
-                    <Loader2 size={14} strokeWidth={1.5} className="animate-spin" />
-                  ) : (
-                    <Send size={14} strokeWidth={1.5} />
-                  )}
-                </button>
-              </div>
-            )}
+          <div className="flex-shrink-0 border-t border-white/10 px-4 py-3">
+            <div className="flex gap-2">
+              <input
+                ref={inputRef}
+                value={input}
+                onChange={(event) => setInput(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' && !event.shiftKey) {
+                    event.preventDefault()
+                    sendMessage(input)
+                  }
+                }}
+                placeholder="Ask about products, orders, customers..."
+                disabled={loading}
+                className="flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-[11px] font-sans text-white placeholder:text-white/25 focus:border-n-gold/40 focus:outline-none disabled:opacity-50"
+              />
+              <button
+                onClick={() => sendMessage(input)}
+                disabled={loading || !input.trim()}
+                className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-n-forest text-white transition-all active:scale-95 hover:bg-n-gold hover:text-n-forest disabled:cursor-not-allowed disabled:opacity-40"
+                aria-label="Send message"
+              >
+                {loading ? <Loader2 size={14} strokeWidth={1.5} className="animate-spin" /> : <Send size={14} strokeWidth={1.5} />}
+              </button>
+            </div>
           </div>
         </div>
       )}
